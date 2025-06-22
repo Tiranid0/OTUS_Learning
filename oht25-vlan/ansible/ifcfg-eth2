@@ -1,0 +1,13 @@
+#Имя физического интерфейса
+DEVICE=eth2
+#Включать интерфейс при запуске системы
+ONBOOT=yes
+#Отключение DHCP-клиента
+BOOTPROTO=none
+#Указываем, что порт часть bond-интерфейса
+MASTER=bond0
+#Указываем роль bond
+SLAVE=yes
+NM_CONTROLLED=yes
+USERCTL=no
+
