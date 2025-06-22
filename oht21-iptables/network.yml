@@ -1,0 +1,111 @@
+- name: Network setup 
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  hosts: all
+  remote_user: vagrant
+  tasks:
+
+  - name: install traceroute
+    apt: 
+      name: traceroute
+      state: present
+      update_cache: yes
+
+  - name: packet forward option on routers
+    sysctl:
+      name: net.ipv4.conf.all.forwarding
+      value: '1'
+      state: present
+    when: "'routers' in group_names"
+
+  - name: check forwarding
+    command: 'sysctl net.ipv4.ip_forward'
+    register: forw
+    when: "'routers' in group_names"
+  - name: show forwarding status
+    debug:
+      msg: "{{ forw.stdout }}"
+    when: "'routers' in group_names"
+
+  - name: iptables install
+    apt: 
+      name: 
+        - iptables
+        - iptables-persistent
+      state: present
+    when: inventory_hostname == "inetRouter"
+  - name: iptables config
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: "{{ item.mode }}"
+    with_items:
+      - {src: "iptables_rules.ipv4", dest: "/etc/iptables_rules.ipv4", mode: "0644" }
+      - { src: "iptables_restore", dest: "/etc/network/if-pre-up.d/iptables", mode: "0755" }
+    when: inventory_hostname == "inetRouter"
+  - name: stop ufw
+    service:
+      name: ufw
+      state: stopped
+      enabled: false
+    when: inventory_hostname == "inetRouter"
+   
+
+  - name: change routes
+    template:
+      src: "{{ inventory_hostname }}.yaml"
+      dest: /etc/netplan/50-vagrant.yaml
+      owner: root
+      group: root
+      mode: '0644'
+  
+  
+  - name: disable vagrant def route
+    template:
+      src: 00-installer-config.yaml
+      dest: /etc/netplan/00-installer-config.yaml
+      owner: root
+      group: root
+      mode: '0644'
+    when: (ansible_hostname != "inetRouter")
+
+  - name: reboot office2Server
+    reboot:
+     reboot_timeout: 60
+    when: (ansible_hostname == "office2Server")
+
+  - name: reboot office2Router
+    reboot:
+     reboot_timeout: 60
+    when: (ansible_hostname == "office2Router")
+
+  - name: reboot office1Server
+    reboot:
+     reboot_timeout: 60
+    when: (ansible_hostname == "office1Server")
+
+  - name: reboot office1Router
+    reboot:
+     reboot_timeout: 60
+    when: (ansible_hostname == "office1Router")
+
+  - name: reboot centralServer
+    reboot:
+     reboot_timeout: 60
+    when: (ansible_hostname == "centralServer")
+
+  - name: reboot centralRouter
+    reboot:
+     reboot_timeout: 60
+    when: (ansible_hostname == "centralRouter")
+
+  - name: reboot inetRouter
+    reboot:
+     reboot_timeout: 60 
+    when: (ansible_hostname == "inetRouter")
+     
+
+      

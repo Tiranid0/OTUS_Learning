@@ -1,0 +1,188 @@
+- name: Network setup 
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  hosts: all
+  remote_user: vagrant
+  tasks:
+
+#######################################################
+
+  - name: show block1 name
+    debug: 
+      msg: "__________==========Настраиваем сеть (oht19-network)==========__________"
+    when: inventory_hostname == "inetRouter"
+
+  - name: install traceroute
+    apt: 
+      name: traceroute
+      state: present
+      update_cache: yes
+
+  - name: packet forward option on routers
+    sysctl:
+      name: net.ipv4.conf.all.forwarding
+      value: '1'
+      state: present
+    when: "'routers' in group_names"
+
+  - name: check forwarding
+    command: 'sysctl net.ipv4.ip_forward'
+    register: forw
+    when: "'routers' in group_names"
+  - name: show forwarding status
+    debug:
+      msg: "{{ forw.stdout }}"
+    when: "'routers' in group_names"
+
+  - name: iptables install
+    apt: 
+      name: 
+        - iptables
+        - iptables-persistent
+      state: present
+    when: inventory_hostname in ["inetRouter" , "inetRouter2"]
+
+  - name: iptables config
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: "{{ item.mode }}"
+    with_items:
+      - { src: "iptables_rules.ipv4", dest: "/etc/iptables/rules.v4", mode: "0644" }
+      - { src: "iptables_restore", dest: "/etc/network/if-pre-up.d/iptables", mode: "0755" }
+    when: inventory_hostname == "inetRouter"
+  
+  - name: stop ufw
+    service:
+      name: ufw
+      state: stopped
+      enabled: false
+    when: inventory_hostname == "inetRouter"
+
+  - name: restart netfilter-persistent
+    service:
+      name: netfilter-persistent
+      state: restarted
+      enabled: true
+    when: inventory_hostname == "inetRouter"
+
+  - name: change routes
+    template:
+      src: "{{ inventory_hostname }}.yaml"
+      dest: /etc/netplan/50-vagrant.yaml
+      owner: root
+      group: root
+      mode: '0644'
+  
+  - name: disable vagrant def route
+    template:
+      src: 00-installer-config.yaml
+      dest: /etc/netplan/00-installer-config.yaml
+      owner: root
+      group: root
+      mode: '0644'
+    when: ansible_hostname not in ["inetRouter" , "inetRouter2" ]
+
+  - name: netplan apply
+    command: 'netplan apply'
+    
+  #######################################################
+
+  - name: show block2 name
+    debug: 
+      msg: "__________==========Настраиваем port knocking==========__________"
+    when: inventory_hostname in [ "inetRouter" ]
+
+  - name: install knockd
+    apt:
+      name: knockd
+      state: present
+      update_cache: yes
+    when: inventory_hostname in [ "inetRouter" , "centralRouter" ]
+
+  - name: autostart knockd daemon
+    lineinfile:
+      path: /etc/default/knockd
+      regexp: 'START_KNOCKD=0'
+      line: 'START_KNOCKD=1'
+      state: present
+    when: inventory_hostname in [ "inetRouter" ]
+
+  - name: copy knock config to inetrouter
+    copy:
+      src: knockd.conf
+      dest: /etc/knockd.conf
+      owner: root
+      group: root
+      mode: 0600
+    when: inventory_hostname in [ "inetRouter" ]
+
+  - name: start knockd service
+    service:
+      name: knockd
+      state: restarted
+      enabled: true
+    when: inventory_hostname in [ "inetRouter" ]
+
+   #######################################################
+
+  - name: show block2 name
+    debug: 
+      msg: "__________==========Nginx==========__________"
+    when: inventory_hostname in [ "centralServer" ]
+    
+  - name: install knockd
+    apt:
+      name: nginx
+      state: present
+      update_cache: yes
+    when: inventory_hostname in [ "centralServer" ]
+
+  - name: Change nginx port to 8080
+    template:
+      src: nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+    when: inventory_hostname in [ "centralServer" ]
+  
+  - name: start nginx service
+    service:
+      name: nginx
+      state: restarted
+      enabled: true
+    when: inventory_hostname in [ "centralServer" ]
+
+  - name: iptables config
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: "{{ item.mode }}"
+    with_items:
+      - { src: "iptables2_rules.ipv4", dest: "/etc/iptables/rules.v4", mode: "0644" }
+      - { src: "iptables2_restore", dest: "/etc/network/if-pre-up.d/iptables", mode: "0755" }
+    when: inventory_hostname == "inetRouter2"
+  
+  - name: stop ufw
+    service:
+      name: ufw
+      state: stopped
+      enabled: false
+    when: inventory_hostname == "inetRouter2" 
+
+  - name: restart netfilter-persistent
+    service:
+      name: netfilter-persistent
+      state: restarted
+      enabled: true
+    when: inventory_hostname == "inetRouter2"
+
+  - name: Start and enable iptables service
+    service:
+      name: iptables
+      state: restarted
+      enabled: true
+    when: inventory_hostname == "inetRouter2"
