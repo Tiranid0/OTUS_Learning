@@ -1,0 +1,147 @@
+- name: server config
+  hosts: all
+  vars: 
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+    
+    - name: show block1 name
+      debug: 
+        msg: "__________==========Настройка DHCP и TFTP-сервера==========__________"
+
+    - name: stop firewall
+      service:
+        name: ufw
+        enabled: false
+        state: stopped
+
+    - name: install dnsmasq
+      apt:
+        name: 
+          - dnsmasq
+          - tftp
+        update_cache: yes
+        state: present
+
+    - name: add /etc/dnsmasq.d/pxe.conf
+      template:
+        src: pxe.conf
+        dest: /etc/dnsmasq.d/pxe.conf
+
+    - name: mkdir -p /srv/tftp
+      file:
+        state: directory
+        path: /srv/tftp
+
+    - name: ubuntu netboot download
+      get_url: 
+        dest: /srv/tftp
+        url: https://releases.ubuntu.com/noble/ubuntu-24.04.2-netboot-amd64.tar.gz
+
+    - name: raspakouvka
+      unarchive:
+        src: /srv/tftp/ubuntu-24.04.2-netboot-amd64.tar.gz
+        dest: /srv/tftp
+        remote_src: yes
+        extra_opts: "-z"
+
+    - name: restart dnsmasq
+      service: 
+        name: dnsmasq
+        state: restarted
+        enabled: true
+
+#######################################################
+
+    - name: show block2 name
+      debug: 
+        msg: "__________==========Настройка WEB-сервера==========__________"
+    
+    - name: install apache2
+      apt:
+        name: apache2
+        state: present
+        update_cache: yes
+
+    - name: make /srv/images for iso's
+      file:
+        path: /srv/images
+        state: directory
+
+    - name: download ub2404
+      get_url:  
+        url: https://releases.ubuntu.com/noble/ubuntu-24.04.2-live-server-amd64.iso
+        dest: /srv/images/
+
+    - name: create server conf
+      template:
+        src: ks-server.conf
+        dest: /etc/apache2/sites-available/ks-server.conf
+
+    - name: conf activate
+      command: 'a2ensite ks-server.conf'
+
+    - name: change /srv/tftp/amd64/pxelinux.cfg/default for legacy
+      template:
+        src: default
+        dest: /srv/tftp/amd64/pxelinux.cfg/default
+        
+    - name: change /srv/tftp/amd64/pxelinux.cfg/default for UEFI
+      template:
+        src: grub.cfg
+        dest: /srv/tftp/amd64/grub/grub.cfg
+
+    - name: restart apache2
+      service:
+        name: apache2
+        enabled: true
+        state: restarted
+
+#######################################################
+
+    - name: show block3 name
+      debug: 
+        msg: "__________==========Настройка автоматической установки Ubuntu 24.04==========__________"
+
+    - name: create /srv/ks
+      file:
+        path: /srv/ks
+        state: directory
+
+    - name: create /srv/ks/user-data
+      template:
+        src: user-data
+        dest: /srv/ks/user-data
+
+    - name: add /srv/ks/meta-data
+      file:
+        path: /srv/ks/meta-data
+        state: touch 
+
+    - name: add ks-lines
+      template:
+        src: 2ks-server.conf
+        dest: /etc/apache2/sites-available/ks-server.conf
+
+    - name: add default
+      template:
+        src: 2default
+        dest: /srv/tftp/amd64/pxelinux.cfg/default
+        
+    - name: change /srv/tftp/amd64/pxelinux.cfg/default for UEFI
+      template:
+        src: 2grub.cfg
+        dest: /srv/tftp/amd64/grub/grub.cfg
+
+    - name: restart apache2
+      service:
+        name: apache2
+        enabled: true
+        state: restarted
+
+    - name: restart dnsmasq
+      service:
+        name: dnsmasq
+        enabled: true
+        state: restarted

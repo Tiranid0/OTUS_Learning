@@ -1,0 +1,7 @@
+vim /srv/tftp/amd64/pxelinux.cfg/default
+DEFAULT install
+LABEL install
+KERNEL linux
+INITRD initrd
+APPEND root=/dev/ram0 ramdisk_size=3000000 ip=dhcp iso-url=http://10.0.0.20/srv/images/ubuntu-24.04.2-live-server-amd64.iso
+

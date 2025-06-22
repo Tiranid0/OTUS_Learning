@@ -1,0 +1,8 @@
+#cloud-config
+autoinstall:
+  identity:
+    hostname: ubuntu-server
+    #ubuntu
+    password: $6$gnqbMUzHhQzpDEw.$.cCNVVDsDfj5Feebh.5O4VbOmib7tyjmeI2ZsFP7VK2kWwgJFbfjvXo3chpeAqCgXWVIW9oNQ/Ag85PR0IsKD/
+    username: ubuntu
+  version: 1
