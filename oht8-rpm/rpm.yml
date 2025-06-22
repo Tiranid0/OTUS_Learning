@@ -1,0 +1,196 @@
+- name: rpm
+  hosts: all
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  tasks:
+
+    - name: nfss configure
+      debug:
+        msg: " __________========== Создать свой RPM пакет ==========__________ "
+
+    - name: soft install
+      yum: 
+        state: present
+        name: [wget, rpmdevtools, rpm-build, createrepo, yum-utils, cmake, gcc, git]
+    
+    - name: mkdir rpm
+      file:
+        path: /home/vagrant/rpm
+        state: directory
+
+    - name: yumdownloader --source nginx
+      command: 'yumdownloader --source nginx'
+      args:
+        chdir: /home/vagrant/rpm
+    
+    - name: rpm -Uvh nginx*.src.rpm
+      shell: 'rpm -Uvh nginx*.src.rpm'
+      args:
+        chdir: /home/vagrant/rpm
+      register: res_1
+    - name: show rpmres
+      debug:
+        msg: "{{ res_1.stdout_lines }}"
+    
+    - name: yum-builddep nginx
+      shell: 'yum-builddep nginx -y'
+      register: res_2
+    - name: show yum-builddep
+      debug:
+        msg: "{{ res_2.stdout_lines }}"
+    
+    - name: git clone --recurse-submodules -j8 http://github.com/google/ngx_brotli
+      git:
+        repo: 'http://github.com/google/ngx_brotli'
+        dest: /root/ngx_brotli
+        recursive: yes
+        force: yes
+      register: res_3
+    - name: show git clone
+      debug:
+        msg: "{{ res_3 }}"
+
+    - name: mkdir /root/ngx_brotli/deps/brotli/out
+      file:
+        path: /root/ngx_brotli/deps/brotli/out
+        state: directory
+
+    - name: cmake1
+      command: cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_CXX_FLAGS="-Ofast -m64 -march=native -mtune=native -flto -funroll-loops -ffunction-sections -fdata-sections -Wl,--gc-sections" -DCMAKE_INSTALL_PREFIX=./installed ..
+      args:
+        chdir: /root/ngx_brotli/deps/brotli/out
+      register: res_4
+    - name: show cmake1
+      debug:
+        msg: "{{ res_4.stdout_lines }}"
+
+    - name: cmake2
+      command: cmake --build . --config Release -j 2 --target brotlienc
+      args: 
+        chdir: /root/ngx_brotli/deps/brotli/out
+      register: res_5
+    - name: show cmake2 
+      debug:
+        msg: "{{ res_5.stdout_lines }}"
+
+    - name: --add-module=/root/ngx_brotli \ in nano ~/rpmbuild/SPECS/nginx.spec
+      lineinfile:
+        path: /root/rpmbuild/SPECS/nginx.spec
+        line: '    --add-module=/root/ngx_brotli \'
+        insertafter: 'if ! ./configure \\'
+        state: present
+
+    - name: rpmbuild -ba nginx.spec -D 'debug_package %{nil}'
+      command: "rpmbuild -ba nginx.spec -D 'debug_package %{nil}'" 
+      args:
+        chdir: /root/rpmbuild/SPECS
+
+    - name: ll rpmbuild/RPMS/x86_64/
+      command: 'ls /root/rpmbuild/RPMS/x86_64/'
+      register: res_6
+    - name: show ll
+      debug:
+        msg: "{{ res_6.stdout_lines }}"
+
+    - name: cp rpmbuild/RPMS/noarch/* rpmbuild/RPMS/x86_64/
+      shell: cp /root/rpmbuild/RPMS/noarch/* /root/rpmbuild/RPMS/x86_64/
+
+    - name: yum localinstall *.rpm
+      shell: yum localinstall /root/rpmbuild/RPMS/x86_64/*.rpm -y
+      register: res
+    - name: show localinstall
+      debug:
+        msg: "{{ res.stdout_lines }}"
+
+    - name: systemctl start nginx
+      service:
+        state: started
+        name: nginx
+
+    - name: systemctl status nginx
+      systemd:
+        name: nginx
+      register: res_7
+    - name: show nginx status
+      debug:
+        msg: "{{ res_7.status.ActiveState }}"
+
+    - name: show block
+      debug:
+        msg: " __________========== Создать свой репозиторий и разместить там ранее собранный RPM ==========__________ "
+
+    - name: mkdir /usr/share/nginx/html/repo
+      file:
+        path: /usr/share/nginx/html/repo
+        state: directory
+
+    - name: cp ~/rpmbuild/RPMS/x86_64/*.rpm /usr/share/nginx/html/repo/
+      shell: cp ~/rpmbuild/RPMS/x86_64/*.rpm /usr/share/nginx/html/repo/
+
+    - name: createrepo /usr/share/nginx/html/repo/
+      shell: createrepo /usr/share/nginx/html/repo/
+      register: res_8
+    - name: show createrepo
+      debug:
+        msg: "{{ res_8.stdout_lines }}"
+    
+    - name: index index.html index.htm; autoindex on; in nano rpmbuild/SPECS/nginx.spec
+      blockinfile:
+        path: /root/rpmbuild/SPECS/nginx.spec
+        block: |
+                  index index.html index.htm;
+                  autoindex on;
+        insertafter: '        error_page 404 /404.html;'
+
+    - name: nginx -t
+      command: nginx -t
+      register: res_9
+    - name: show nginx -t
+      debug:
+        msg: "{{ res_9 }}"
+
+    - name: nginx -s reload
+      command: nginx -s reload
+
+    - name: Create otus yum repository file
+      copy:
+        dest: /etc/yum.repos.d/otus.repo
+        content: |
+          [otus]
+          name=otus-linux
+          baseurl=http://localhost/repo
+          gpgcheck=0
+          enabled=1
+
+    - name: yum repolist enabled | grep otus
+      shell: yum repolist enabled | grep otus
+      register: res_10
+    - name: show repolist
+      debug:
+        msg: "{{ res_10 }}"
+    
+    - name: wget https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+      get_url:
+        url: https://repo.percona.com/yum/percona-release-latest.noarch.rpm
+        dest: /usr/share/nginx/html/repo/
+
+    - name: createrepo /usr/share/nginx/html/repo/
+      command: createrepo /usr/share/nginx/html/repo/
+
+    - name: yum makecache
+      yum:
+        update_cache: yes
+    
+    - name: yum list | grep otus
+      command: yum list | grep otus
+      register: res_11
+    - name: show yum list
+      debug:
+        msg: "{{ res_11.stdout_lines }}"
+
+    - name: yum install -y percona-release.noarch
+      yum: 
+        name: percona-release.noarch
+        state: present
