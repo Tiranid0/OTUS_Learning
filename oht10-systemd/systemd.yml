@@ -1,0 +1,281 @@
+- name: systemd
+  hosts: all
+  become: true
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  tasks:
+
+  - name: create watchlog file
+    copy: 
+      dest: /etc/default/watchlog
+      content: |
+        # Configuration file for my watchlog service
+        # Place it to /etc/default
+        # File and word in that file that we will be monit
+        WORD="ALERT"
+        LOG=/var/log/watchlog.log
+
+  - name: logs in file
+    copy:
+      dest: /var/log/watchlog.log
+      content: |
+        ALERT
+        this manual so bad
+        like a lesson
+        like a mts link
+        like all this curse
+        ALLoooo
+        where do we change file from git???
+        ALERT!!!
+        ALERT 
+        горит!
+        ПОЛЫХАЕТ!!!!
+        Вы за 3 года нифига не поменяли методички 
+        даже сделали их хуже (или так держите их актуальными??)
+        даже номера уроков в методичках как были старыми, так и остались
+        за что 130к?????
+        даже теории нет к урокам, чтобы почитать ее перед занятием и задать на семинарах правильные вопросы
+        презентация - это средство удержания внимания аудитории и шпаргалка докладчику, но никак не полноценный лекционный материал
+        халтура а не курс
+        в чем его ценность перед аналогами? 
+        как то очень много "самостоятельного" за эти деньги, за 3 года можно было склепать хоть какие-нибудь материалы для теории, ссылки на ресурсы мне и коллеги в личку покидать могут
+        хотя бы опечатки поправьте на страницах к урокам
+        зачем ансибл перед башем????
+        зачем ансибл впринципе на первых 10 домашках???
+        а да, и помните, вагрант не обязательно
+        так уберите упоминание о нем из требований к дз
+
+  - name: create /var/log/watchlog.log  
+    file:
+      path: /var/log/watchlog.log
+      state: touch
+
+  - name: create script watchlog.sh
+    copy:
+      dest: /opt/watchlog.sh
+      content: |
+        #!/bin/bash
+        WORD=$1
+        LOG=$2
+        DATE=`date`
+        if grep $WORD $LOG &> /dev/null
+        then
+        logger "$DATE: I found word, Master!"
+        else
+        exit 0
+        fi
+
+  - name: change permission for watchlog.sh
+    file:
+      path: /opt/watchlog.sh
+      mode: '0755'
+
+  - name: create service unit
+    copy:
+      dest: /etc/systemd/system/watchlog.service
+      content: |
+        [Unit]
+        Description=My watchlog service
+
+        [Service]
+        Type=oneshot
+        EnvironmentFile=/etc/default/watchlog
+        ExecStart=/opt/watchlog.sh $WORD $LOG
+
+  - name: create timer unit
+    copy:
+      dest: /etc/systemd/system/watchlog.timer
+      content: |
+        [Unit]
+        Description=Run watchlog script every 30 second
+
+        [Timer]
+        # Run every 30 second
+        OnUnitActiveSec=30
+        Unit=watchlog.service
+
+        [Install]
+        WantedBy=multi-user.target
+
+  - name: start watchlog.timer
+    service:
+      name: watchlog.timer 
+      state: started
+  - name: start watchlog.service
+    service:
+      name: watchlog.service 
+      state: started
+
+  - name: wait 40 second
+    pause:
+      seconds: 40
+
+  - name: check syslog
+    shell: 'tail -n 1000 /var/log/syslog  | grep word'
+    register: syslog
+  - name: show syslog
+    debug:
+      msg: "{{ syslog }}"
+
+  - name: install packages
+    apt: 
+      name:
+        - spawn-fcgi 
+        - php 
+        - php-cgi 
+        - php-cli 
+        - apache2 
+        - libapache2-mod-fcgid
+        - nginx
+      state: present
+
+  - name: create directoty spawm-fcgi
+    file:
+      path: /etc/spawn-fcgi
+      state: directory
+
+  - name: create fcgi service file
+    copy: 
+      dest: /etc/spawn-fcgi/fcgi.conf
+      content: |
+        # You must set some working options before the "spawn-fcgi" service will work.
+        # If SOCKET points to a file, then this file is cleaned up by the init script.
+        #
+        # See spawn-fcgi(1) for all possible options.
+        #
+        # Example :
+        SOCKET=/var/run/php-fcgi.sock
+        OPTIONS="-u www-data -g www-data -s $SOCKET -S -M 0600 -C 32 -F 1 -- /usr/bin/php-cgi"
+  
+  - name: fcgi unit file
+    copy:
+      dest: /etc/systemd/system/spawn-fcgi.service
+      content: |
+        [Unit]
+        Description=Spawn-fcgi startup service by Otus
+        After=network.target
+
+        [Service]
+        Type=simple
+        PIDFile=/var/run/spawn-fcgi.pid
+        EnvironmentFile=/etc/spawn-fcgi/fcgi.conf
+        ExecStart=/usr/bin/spawn-fcgi -n $OPTIONS
+        KillMode=process
+
+        [Install]
+        WantedBy=multi-user.target
+
+  - name: start spawn-fcgi
+    service:
+      name: spawn-fcgi
+      state: started
+
+  - name: status spawn-fcgi
+    service:
+      name: spawn-fcgi
+    register: spawnfcgi_status
+  - name: show spawn-fcgi status
+    debug:
+      msg: "{{ spawnfcgi_status }}"
+
+  - name: create nginx@.service
+    copy:
+      dest: /etc/systemd/system/nginx@.service
+      content: | 
+        # Stop dance for nginx
+        # =======================
+        #
+        # ExecStop sends SIGSTOP (graceful stop) to the nginx process.
+        # If, after 5s (--retry QUIT/5) nginx is still running, systemd takes control
+        # and sends SIGTERM (fast shutdown) to the main process.
+        # After another 5s (TimeoutStopSec=5), and if nginx is alive, systemd sends
+        # SIGKILL to all the remaining processes in the process group (KillMode=mixed).
+        #
+        # nginx signals reference doc:
+        # http://nginx.org/en/docs/control.html
+        #
+        [Unit]
+        Description=A high performance web server and a reverse proxy server
+        Documentation=man:nginx(8)
+        After=network.target nss-lookup.target
+
+        [Service]
+        Type=forking
+        PIDFile=/run/nginx-%I.pid
+        ExecStartPre=/usr/sbin/nginx -t -c /etc/nginx/nginx-%I.conf -q -g 'daemon on; master_process on;'
+        ExecStart=/usr/sbin/nginx -c /etc/nginx/nginx-%I.conf -g 'daemon on; master_process on;'
+        ExecReload=/usr/sbin/nginx -c /etc/nginx/nginx-%I.conf -g 'daemon on; master_process on;' -s reload
+        ExecStop=-/sbin/start-stop-daemon --quiet --stop --retry QUIT/5 --pidfile /run/nginx-%I.pid
+        TimeoutStopSec=5
+        KillMode=mixed
+
+        [Install]
+        WantedBy=multi-user.target
+
+  - name: create nginx-first.conf
+    copy:
+      src: /etc/nginx/nginx.conf
+      dest: /etc/nginx/nginx-first.conf
+      remote_src: yes
+
+  - name: create nginx-second.conf
+    copy:  
+      src: /etc/nginx/nginx.conf
+      dest: /etc/nginx/nginx-second.conf
+      remote_src: yes
+
+  - name: change nginx-first.conf
+    template:
+      src: nginx-conf.j2
+      dest: /etc/nginx/nginx-first.conf
+    vars:
+      pid_file: "/run/nginx-first.pid"
+      port: "9001"
+
+  - name: change nginx-second.conf
+    template:
+      src: nginx-conf.j2
+      dest: /etc/nginx/nginx-second.conf
+    vars:
+      pid_file: "/run/nginx-second.pid"
+      port: "9002"
+
+  - name: stop apache2 for free port 80
+    service:
+      name: apache2.service
+      state: stopped
+  - name: start nginx-1/2
+    service:
+      name: nginx@{{ item  }}
+      state: started
+    loop:
+      - first
+      - second
+
+  - name: nginx-1/2 status
+    service:
+      name: nginx@{{ item  }}
+    loop:
+      - first
+      - second
+    register: nginx_status
+  - name: show nginx-1/2 status
+    debug:
+      msg: "{{ nginx_status }}"
+
+  - name: check ports
+    shell: 'ss -tnulp | grep nginx'
+    register: ss_res
+  - name: show ss_res
+    debug:
+      msg: "{{ ss_res }}"
+
+  - name: ps afx | grep nginx
+    shell: 'ps afx | grep nginx'
+    register: ps_res
+  - name: show ps afx | grep nginx
+    debug:
+      msg: "{{ ps_res }}"
+
+  
