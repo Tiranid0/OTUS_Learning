@@ -1,0 +1,236 @@
+$ ansible-playbook -i hosts selinux_dns_dop.yml 
+[WARNING]: Found both group and host with same name: client
+[WARNING]: Found both group and host with same name: ns01
+
+PLAY [try change zone-config] **********************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [client]
+
+TASK [show block-2 name] ***************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": "__________==========Обеспечение работоспособности приложения при включенном SELinux==========__________"
+}
+
+TASK [prepare nsupdate commands] *******************************************************************************************************************************************************
+ok: [client]
+
+TASK [try change zone-config] **********************************************************************************************************************************************************
+fatal: [client]: FAILED! => {"changed": true, "cmd": ["nsupdate", "-k", "/etc/named.zonetransfer.key"], "delta": "0:00:00.023179", "end": "2025-04-16 18:29:58.276317", "msg": "non-zero return code", "rc": 2, "start": "2025-04-16 18:29:58.253138", "stderr": "update failed: SERVFAIL", "stderr_lines": ["update failed: SERVFAIL"], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [show nsupdate res] ***************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "nsupdate",
+            "-k",
+            "/etc/named.zonetransfer.key"
+        ],
+        "delta": "0:00:00.023179",
+        "end": "2025-04-16 18:29:58.276317",
+        "failed": true,
+        "msg": "non-zero return code",
+        "rc": 2,
+        "start": "2025-04-16 18:29:58.253138",
+        "stderr": "update failed: SERVFAIL",
+        "stderr_lines": [
+            "update failed: SERVFAIL"
+        ],
+        "stdout": "",
+        "stdout_lines": []
+    }
+}
+
+TASK [dns requset] *********************************************************************************************************************************************************************
+changed: [client]
+
+TASK [show dns request] ****************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": [
+        "",
+        "; <<>> DiG 9.16.23-RH <<>> www.ddns.lab",
+        ";; global options: +cmd",
+        ";; Got answer:",
+        ";; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 56287",
+        ";; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1",
+        "",
+        ";; OPT PSEUDOSECTION:",
+        "; EDNS: version: 0, flags:; udp: 1232",
+        "; COOKIE: ab7030689799eacf0100000067fff7262bc92a6c1aa2e7f1 (good)",
+        ";; QUESTION SECTION:",
+        ";www.ddns.lab.\t\t\tIN\tA",
+        "",
+        ";; AUTHORITY SECTION:",
+        "ddns.lab.\t\t600\tIN\tSOA\tns01.dns.lab. root.dns.lab. 2711201407 3600 600 86400 600",
+        "",
+        ";; Query time: 1 msec",
+        ";; SERVER: 192.168.50.10#53(192.168.50.10)",
+        ";; WHEN: Wed Apr 16 18:29:58 UTC 2025",
+        ";; MSG SIZE  rcvd: 122"
+    ]
+}
+
+TASK [check audit log] *****************************************************************************************************************************************************************
+changed: [client]
+
+TASK [show client audit log] ***********************************************************************************************************************************************************
+ok: [client] => {
+    "msg": {
+        "changed": true,
+        "cmd": "grep named /var/log/audit/audit.log | audit2why",
+        "delta": "0:00:00.134619",
+        "end": "2025-04-16 18:29:58.964166",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 18:29:58.829547",
+        "stderr": "Nothing to do",
+        "stderr_lines": [
+            "Nothing to do"
+        ],
+        "stdout": "",
+        "stdout_lines": []
+    }
+}
+
+PLAY [server check] ********************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [ns01]
+
+TASK [show block name] *****************************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": "В следующих задачах проверяем, что не так с сервером"
+}
+
+TASK [check audit log] *****************************************************************************************************************************************************************
+changed: [ns01]
+
+TASK [show sever audit log] ************************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": {
+        "changed": true,
+        "cmd": "grep named /var/log/audit/audit.log | audit2why",
+        "delta": "0:00:00.131880",
+        "end": "2025-04-16 18:30:00.336393",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 18:30:00.204513",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "type=AVC msg=audit(1744828198.261:1755): avc:  denied  { write } for  pid=7275 comm=\"isc-net-0000\" name=\"dynamic\" dev=\"sda4\" ino=34041089 scontext=system_u:system_r:named_t:s0 tcontext=unconfined_u:object_r:named_conf_t:s0 tclass=dir permissive=0\n\n\tWas caused by:\n\t\tMissing type enforcement (TE) allow rule.\n\n\t\tYou can use audit2allow to generate a loadable module to allow this access.",
+        "stdout_lines": [
+            "type=AVC msg=audit(1744828198.261:1755): avc:  denied  { write } for  pid=7275 comm=\"isc-net-0000\" name=\"dynamic\" dev=\"sda4\" ino=34041089 scontext=system_u:system_r:named_t:s0 tcontext=unconfined_u:object_r:named_conf_t:s0 tclass=dir permissive=0",
+            "",
+            "\tWas caused by:",
+            "\t\tMissing type enforcement (TE) allow rule.",
+            "",
+            "\t\tYou can use audit2allow to generate a loadable module to allow this access."
+        ]
+    }
+}
+
+TASK [change context for dynamic] ******************************************************************************************************************************************************
+changed: [ns01]
+
+PLAY [check nsupdate again] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [client]
+
+TASK [try change zone-config] **********************************************************************************************************************************************************
+fatal: [client]: FAILED! => {"changed": true, "cmd": ["nsupdate", "-k", "/etc/named.zonetransfer.key"], "delta": "0:00:00.027049", "end": "2025-04-16 18:30:06.916993", "msg": "non-zero return code", "rc": 2, "start": "2025-04-16 18:30:06.889944", "stderr": "update failed: SERVFAIL", "stderr_lines": ["update failed: SERVFAIL"], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [show nsupdate res] ***************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "nsupdate",
+            "-k",
+            "/etc/named.zonetransfer.key"
+        ],
+        "delta": "0:00:00.027049",
+        "end": "2025-04-16 18:30:06.916993",
+        "failed": true,
+        "msg": "non-zero return code",
+        "rc": 2,
+        "start": "2025-04-16 18:30:06.889944",
+        "stderr": "update failed: SERVFAIL",
+        "stderr_lines": [
+            "update failed: SERVFAIL"
+        ],
+        "stdout": "",
+        "stdout_lines": []
+    }
+}
+
+TASK [dns requset] *********************************************************************************************************************************************************************
+changed: [client]
+
+TASK [show dns request] ****************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": [
+        "",
+        "; <<>> DiG 9.16.23-RH <<>> www.ddns.lab",
+        ";; global options: +cmd",
+        ";; Got answer:",
+        ";; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 7778",
+        ";; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1",
+        "",
+        ";; OPT PSEUDOSECTION:",
+        "; EDNS: version: 0, flags:; udp: 1232",
+        "; COOKIE: 3bef8595322f14000100000067fff72fd15274deb5380da6 (good)",
+        ";; QUESTION SECTION:",
+        ";www.ddns.lab.\t\t\tIN\tA",
+        "",
+        ";; AUTHORITY SECTION:",
+        "ddns.lab.\t\t600\tIN\tSOA\tns01.dns.lab. root.dns.lab. 2711201407 3600 600 86400 600",
+        "",
+        ";; Query time: 1 msec",
+        ";; SERVER: 192.168.50.10#53(192.168.50.10)",
+        ";; WHEN: Wed Apr 16 18:30:07 UTC 2025",
+        ";; MSG SIZE  rcvd: 122"
+    ]
+}
+
+PLAY [returm context on server] ********************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [ns01]
+
+TASK [return context] ******************************************************************************************************************************************************************
+changed: [ns01]
+
+TASK [show return res] *****************************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "semodule",
+            "-r",
+            "conf_to_write"
+        ],
+        "delta": "0:00:04.540398",
+        "end": "2025-04-16 18:30:12.666663",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 18:30:08.126265",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "libsemanage.semanage_direct_remove_key: Removing last conf_to_write module (no other conf_to_write module exists at another priority).",
+        "stdout_lines": [
+            "libsemanage.semanage_direct_remove_key: Removing last conf_to_write module (no other conf_to_write module exists at another priority)."
+        ]
+    }
+}
+
+PLAY RECAP *****************************************************************************************************************************************************************************
+client                     : ok=14   changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=2   
+ns01                       : ok=8    changed=3    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

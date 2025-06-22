@@ -1,0 +1,487 @@
+$ ansible-playbook -i hosts selinux.yml
+[WARNING]: Invalid characters were found in group names but not replaced, use -vvvv to see details
+
+PLAY [selinux_nginx] *******************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show block-1 name] ***************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "__________==========Запустить nginx на нестандартном порту 3-мя разными способам==========__________"
+}
+
+TASK [show step-0 name] ****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "__________Проверяем состояние системы сразу после запуска__________"
+}
+
+TASK [check nginx satatus] *************************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show nginx status] ***************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "nginx state: failed"
+}
+
+TASK [check firewalld satatus] *********************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show firewalld status] ***********************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "firewalld state:inactive"
+}
+
+TASK [check nginx config] **************************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [show nginx -t] *******************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "nginx",
+            "-t"
+        ],
+        "delta": "0:00:00.004239",
+        "end": "2025-04-16 13:02:18.056800",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:18.052561",
+        "stderr": "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok\nnginx: configuration file /etc/nginx/nginx.conf test is successful",
+        "stderr_lines": [
+            "nginx: the configuration file /etc/nginx/nginx.conf syntax is ok",
+            "nginx: configuration file /etc/nginx/nginx.conf test is successful"
+        ],
+        "stdout": "",
+        "stdout_lines": []
+    }
+}
+
+TASK [check selinux mode] **************************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [show getenforce] *****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "getenforce"
+        ],
+        "delta": "0:00:00.002503",
+        "end": "2025-04-16 13:02:18.328874",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:18.326371",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "Enforcing",
+        "stdout_lines": [
+            "Enforcing"
+        ]
+    }
+}
+
+TASK [show step-1 name] ****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "__________Разрешим в SELinux работу nginx на порту TCP 4881 c помощью переключателей setsebool__________"
+}
+
+TASK [check logs by audit2why] *********************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [show audit2why log] **************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": "grep nginx /var/log/audit/audit.log  | audit2why",
+        "delta": "0:00:00.136658",
+        "end": "2025-04-16 13:02:18.756146",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:18.619488",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "type=AVC msg=audit(1744799456.390:779): avc:  denied  { name_bind } for  pid=6692 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0\n\n\tWas caused by:\n\tThe boolean nis_enabled was set incorrectly. \n\tDescription:\n\tAllow nis to enabled\n\n\tAllow access by executing:\n\t# setsebool -P nis_enabled 1\ntype=AVC msg=audit(1744802086.163:841): avc:  denied  { name_bind } for  pid=6869 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0\n\n\tWas caused by:\n\tThe boolean nis_enabled was set incorrectly. \n\tDescription:\n\tAllow nis to enabled\n\n\tAllow access by executing:\n\t# setsebool -P nis_enabled 1\ntype=AVC msg=audit(1744802691.972:853): avc:  denied  { name_bind } for  pid=6922 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0\n\n\tWas caused by:\n\tThe boolean nis_enabled was set incorrectly. \n\tDescription:\n\tAllow nis to enabled\n\n\tAllow access by executing:\n\t# setsebool -P nis_enabled 1\ntype=AVC msg=audit(1744807228.737:874): avc:  denied  { name_bind } for  pid=7090 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0\n\n\tWas caused by:\n\tThe boolean nis_enabled was set incorrectly. \n\tDescription:\n\tAllow nis to enabled\n\n\tAllow access by executing:\n\t# setsebool -P nis_enabled 1\ntype=AVC msg=audit(1744808037.201:3265): avc:  denied  { name_bind } for  pid=14423 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0\n\n\tWas caused by:\n\tThe boolean nis_enabled was set incorrectly. \n\tDescription:\n\tAllow nis to enabled\n\n\tAllow access by executing:\n\t# setsebool -P nis_enabled 1\ntype=AVC msg=audit(1744808094.272:3575): avc:  denied  { name_bind } for  pid=15416 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0\n\n\tWas caused by:\n\tThe boolean nis_enabled was set incorrectly. \n\tDescription:\n\tAllow nis to enabled\n\n\tAllow access by executing:\n\t# setsebool -P nis_enabled 1\ntype=AVC msg=audit(1744808349.780:4056): avc:  denied  { name_bind } for  pid=16875 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0\n\n\tWas caused by:\n\tThe boolean nis_enabled was set incorrectly. \n\tDescription:\n\tAllow nis to enabled\n\n\tAllow access by executing:\n\t# setsebool -P nis_enabled 1",
+        "stdout_lines": [
+            "type=AVC msg=audit(1744799456.390:779): avc:  denied  { name_bind } for  pid=6692 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0",
+            "",
+            "\tWas caused by:",
+            "\tThe boolean nis_enabled was set incorrectly. ",
+            "\tDescription:",
+            "\tAllow nis to enabled",
+            "",
+            "\tAllow access by executing:",
+            "\t# setsebool -P nis_enabled 1",
+            "type=AVC msg=audit(1744802086.163:841): avc:  denied  { name_bind } for  pid=6869 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0",
+            "",
+            "\tWas caused by:",
+            "\tThe boolean nis_enabled was set incorrectly. ",
+            "\tDescription:",
+            "\tAllow nis to enabled",
+            "",
+            "\tAllow access by executing:",
+            "\t# setsebool -P nis_enabled 1",
+            "type=AVC msg=audit(1744802691.972:853): avc:  denied  { name_bind } for  pid=6922 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0",
+            "",
+            "\tWas caused by:",
+            "\tThe boolean nis_enabled was set incorrectly. ",
+            "\tDescription:",
+            "\tAllow nis to enabled",
+            "",
+            "\tAllow access by executing:",
+            "\t# setsebool -P nis_enabled 1",
+            "type=AVC msg=audit(1744807228.737:874): avc:  denied  { name_bind } for  pid=7090 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0",
+            "",
+            "\tWas caused by:",
+            "\tThe boolean nis_enabled was set incorrectly. ",
+            "\tDescription:",
+            "\tAllow nis to enabled",
+            "",
+            "\tAllow access by executing:",
+            "\t# setsebool -P nis_enabled 1",
+            "type=AVC msg=audit(1744808037.201:3265): avc:  denied  { name_bind } for  pid=14423 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0",
+            "",
+            "\tWas caused by:",
+            "\tThe boolean nis_enabled was set incorrectly. ",
+            "\tDescription:",
+            "\tAllow nis to enabled",
+            "",
+            "\tAllow access by executing:",
+            "\t# setsebool -P nis_enabled 1",
+            "type=AVC msg=audit(1744808094.272:3575): avc:  denied  { name_bind } for  pid=15416 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0",
+            "",
+            "\tWas caused by:",
+            "\tThe boolean nis_enabled was set incorrectly. ",
+            "\tDescription:",
+            "\tAllow nis to enabled",
+            "",
+            "\tAllow access by executing:",
+            "\t# setsebool -P nis_enabled 1",
+            "type=AVC msg=audit(1744808349.780:4056): avc:  denied  { name_bind } for  pid=16875 comm=\"nginx\" src=4881 scontext=system_u:system_r:httpd_t:s0 tcontext=system_u:object_r:unreserved_port_t:s0 tclass=tcp_socket permissive=0",
+            "",
+            "\tWas caused by:",
+            "\tThe boolean nis_enabled was set incorrectly. ",
+            "\tDescription:",
+            "\tAllow nis to enabled",
+            "",
+            "\tAllow access by executing:",
+            "\t# setsebool -P nis_enabled 1"
+        ]
+    }
+}
+
+TASK [turn on nis_enabled option and check status] *************************************************************************************************************************************
+changed: [lvm]
+
+TASK [show setsebool status] ***********************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": "setsebool -P nis_enabled on\ngetsebool -a | grep nis_enabled\n",
+        "delta": "0:00:00.332919",
+        "end": "2025-04-16 13:02:19.388855",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:19.055936",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "nis_enabled --> on",
+        "stdout_lines": [
+            "nis_enabled --> on"
+        ]
+    }
+}
+
+TASK [restart nginx] *******************************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [nginx status] ********************************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show nginx status] ***************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "nginx state: active"
+}
+
+TASK [check http://127.0.0.1:4881] *****************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show http header] ****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "accept_ranges": "bytes",
+        "changed": false,
+        "connection": "close",
+        "content_length": "4681",
+        "content_type": "text/html",
+        "cookies": {},
+        "cookies_string": "",
+        "date": "Wed, 16 Apr 2025 13:02:20 GMT",
+        "elapsed": 0,
+        "etag": "\"6161d621-1249\"",
+        "failed": false,
+        "last_modified": "Sat, 09 Oct 2021 17:49:21 GMT",
+        "msg": "OK (4681 bytes)",
+        "redirected": false,
+        "server": "nginx/1.20.1",
+        "status": 200,
+        "url": "http://127.0.0.1:4881"
+    }
+}
+
+TASK [turn off nis_enabled option for next step and check status] **********************************************************************************************************************
+changed: [lvm]
+
+TASK [show setsebool status] ***********************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": "setsebool -P nis_enabled off\ngetsebool -a | grep nis_enabled\n",
+        "delta": "0:00:00.417396",
+        "end": "2025-04-16 13:02:21.280275",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:20.862879",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "nis_enabled --> off",
+        "stdout_lines": [
+            "nis_enabled --> off"
+        ]
+    }
+}
+
+TASK [restart nginx] *******************************************************************************************************************************************************************
+fatal: [lvm]: FAILED! => {"changed": false, "msg": "Unable to restart service nginx: Job for nginx.service failed because the control process exited with error code.\nSee \"systemctl status nginx.service\" and \"journalctl -xeu nginx.service\" for details.\n"}
+...ignoring
+
+TASK [show step-2 name] ****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "__________Разрешим в SELinux работу nginx на порту TCP 4881 c помощью добавления нестандартного порта в имеющийся тип__________"
+}
+
+TASK [check allowed ports] *************************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [show semanage http list] *********************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": "semanage port -l | grep http",
+        "delta": "0:00:00.196056",
+        "end": "2025-04-16 13:02:22.251812",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:22.055756",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "http_cache_port_t              tcp      8080, 8118, 8123, 10001-10010\nhttp_cache_port_t              udp      3130\nhttp_port_t                    tcp      80, 81, 443, 488, 8008, 8009, 8443, 9000\npegasus_http_port_t            tcp      5988\npegasus_https_port_t           tcp      5989",
+        "stdout_lines": [
+            "http_cache_port_t              tcp      8080, 8118, 8123, 10001-10010",
+            "http_cache_port_t              udp      3130",
+            "http_port_t                    tcp      80, 81, 443, 488, 8008, 8009, 8443, 9000",
+            "pegasus_http_port_t            tcp      5988",
+            "pegasus_https_port_t           tcp      5989"
+        ]
+    }
+}
+
+TASK [add port 4881  and check semanage list] ******************************************************************************************************************************************
+changed: [lvm]
+
+TASK [show semanage http list] *********************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": "semanage port -a -t http_port_t -p tcp 4881\nsemanage port -l | grep  http_port_t\n",
+        "delta": "0:00:00.668431",
+        "end": "2025-04-16 13:02:23.214893",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:22.546462",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "http_port_t                    tcp      4881, 80, 81, 443, 488, 8008, 8009, 8443, 9000\npegasus_http_port_t            tcp      5988",
+        "stdout_lines": [
+            "http_port_t                    tcp      4881, 80, 81, 443, 488, 8008, 8009, 8443, 9000",
+            "pegasus_http_port_t            tcp      5988"
+        ]
+    }
+}
+
+TASK [restart nginx] *******************************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [nginx status] ********************************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show nginx status] ***************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "nginx state: active"
+}
+
+TASK [check http://127.0.0.1:4881] *****************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show http header] ****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "accept_ranges": "bytes",
+        "changed": false,
+        "connection": "close",
+        "content_length": "4681",
+        "content_type": "text/html",
+        "cookies": {},
+        "cookies_string": "",
+        "date": "Wed, 16 Apr 2025 13:02:24 GMT",
+        "elapsed": 0,
+        "etag": "\"6161d621-1249\"",
+        "failed": false,
+        "last_modified": "Sat, 09 Oct 2021 17:49:21 GMT",
+        "msg": "OK (4681 bytes)",
+        "redirected": false,
+        "server": "nginx/1.20.1",
+        "status": 200,
+        "url": "http://127.0.0.1:4881"
+    }
+}
+
+TASK [delete port 4881 for next step and check semanage list] **************************************************************************************************************************
+changed: [lvm]
+
+TASK [show semanage http list] *********************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": "semanage port -d -t http_port_t -p tcp 4881\nsemanage port -l | grep  http_port_t\n",
+        "delta": "0:00:00.626046",
+        "end": "2025-04-16 13:02:25.306211",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:24.680165",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "http_port_t                    tcp      80, 81, 443, 488, 8008, 8009, 8443, 9000\npegasus_http_port_t            tcp      5988",
+        "stdout_lines": [
+            "http_port_t                    tcp      80, 81, 443, 488, 8008, 8009, 8443, 9000",
+            "pegasus_http_port_t            tcp      5988"
+        ]
+    }
+}
+
+TASK [restart nginx] *******************************************************************************************************************************************************************
+fatal: [lvm]: FAILED! => {"changed": false, "msg": "Unable to restart service nginx: Job for nginx.service failed because the control process exited with error code.\nSee \"systemctl status nginx.service\" and \"journalctl -xeu nginx.service\" for details.\n"}
+...ignoring
+
+TASK [show step-3 name] ****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "__________Разрешим в SELinux работу nginx на порту TCP 4881 c помощью формирования и установки модуля SELinux__________"
+}
+
+TASK [check log by audit2allow, set up created module and check module list] ***********************************************************************************************************
+changed: [lvm]
+
+TASK [show audit2allow_res] ************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": "grep nginx /var/log/audit/audit.log | audit2allow -M nginx\nsemodule -i nginx.pp\nsemodule -l | grep nginx\n",
+        "delta": "0:00:04.573619",
+        "end": "2025-04-16 13:02:30.687858",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:26.114239",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "******************** IMPORTANT ***********************\nTo make this policy package active, execute:\n\nsemodule -i nginx.pp\n\nnginx",
+        "stdout_lines": [
+            "******************** IMPORTANT ***********************",
+            "To make this policy package active, execute:",
+            "",
+            "semodule -i nginx.pp",
+            "",
+            "nginx"
+        ]
+    }
+}
+
+TASK [restart nginx] *******************************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [nginx status] ********************************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show nginx status] ***************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": "nginx state: active"
+}
+
+TASK [check http://127.0.0.1:4881] *****************************************************************************************************************************************************
+ok: [lvm]
+
+TASK [show http header] ****************************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "accept_ranges": "bytes",
+        "changed": false,
+        "connection": "close",
+        "content_length": "4681",
+        "content_type": "text/html",
+        "cookies": {},
+        "cookies_string": "",
+        "date": "Wed, 16 Apr 2025 13:02:31 GMT",
+        "elapsed": 0,
+        "etag": "\"6161d621-1249\"",
+        "failed": false,
+        "last_modified": "Sat, 09 Oct 2021 17:49:21 GMT",
+        "msg": "OK (4681 bytes)",
+        "redirected": false,
+        "server": "nginx/1.20.1",
+        "status": 200,
+        "url": "http://127.0.0.1:4881"
+    }
+}
+
+TASK [delete semodule for next test] ***************************************************************************************************************************************************
+changed: [lvm]
+
+TASK [show semodule -r nginx res] ******************************************************************************************************************************************************
+ok: [lvm] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "semodule",
+            "-r",
+            "nginx"
+        ],
+        "delta": "0:00:04.597545",
+        "end": "2025-04-16 13:02:36.755498",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 13:02:32.157953",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "libsemanage.semanage_direct_remove_key: Removing last nginx module (no other nginx module exists at another priority).",
+        "stdout_lines": [
+            "libsemanage.semanage_direct_remove_key: Removing last nginx module (no other nginx module exists at another priority)."
+        ]
+    }
+}
+
+TASK [restart nginx] *******************************************************************************************************************************************************************
+fatal: [lvm]: FAILED! => {"changed": false, "msg": "Unable to restart service nginx: Job for nginx.service failed because the control process exited with error code.\nSee \"systemctl status nginx.service\" and \"journalctl -xeu nginx.service\" for details.\n"}
+...ignoring
+
+PLAY RECAP *****************************************************************************************************************************************************************************
+lvm                        : ok=48   changed=13   unreachable=0    failed=0    skipped=0    rescued=0    ignored=3   

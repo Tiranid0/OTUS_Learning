@@ -1,0 +1,288 @@
+$ ansible-playbook -i hosts selinux_dns.yml 
+[WARNING]: Found both group and host with same name: ns01
+[WARNING]: Found both group and host with same name: client
+
+PLAY [try change zone-config] **********************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [client]
+
+TASK [show block-2 name] ***************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": "__________==========Обеспечение работоспособности приложения при включенном SELinux==========__________"
+}
+
+TASK [prepare nsupdate commands] *******************************************************************************************************************************************************
+ok: [client]
+
+TASK [try change zone-config] **********************************************************************************************************************************************************
+fatal: [client]: FAILED! => {"changed": true, "cmd": ["nsupdate", "-k", "/etc/named.zonetransfer.key"], "delta": "0:00:00.028474", "end": "2025-04-16 18:25:54.309507", "msg": "non-zero return code", "rc": 2, "start": "2025-04-16 18:25:54.281033", "stderr": "update failed: SERVFAIL", "stderr_lines": ["update failed: SERVFAIL"], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [show nsupdate res] ***************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "nsupdate",
+            "-k",
+            "/etc/named.zonetransfer.key"
+        ],
+        "delta": "0:00:00.028474",
+        "end": "2025-04-16 18:25:54.309507",
+        "failed": true,
+        "msg": "non-zero return code",
+        "rc": 2,
+        "start": "2025-04-16 18:25:54.281033",
+        "stderr": "update failed: SERVFAIL",
+        "stderr_lines": [
+            "update failed: SERVFAIL"
+        ],
+        "stdout": "",
+        "stdout_lines": []
+    }
+}
+
+TASK [dns requset] *********************************************************************************************************************************************************************
+changed: [client]
+
+TASK [show dns request] ****************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": [
+        "",
+        "; <<>> DiG 9.16.23-RH <<>> www.ddns.lab",
+        ";; global options: +cmd",
+        ";; Got answer:",
+        ";; ->>HEADER<<- opcode: QUERY, status: NXDOMAIN, id: 28892",
+        ";; flags: qr aa rd ra; QUERY: 1, ANSWER: 0, AUTHORITY: 1, ADDITIONAL: 1",
+        "",
+        ";; OPT PSEUDOSECTION:",
+        "; EDNS: version: 0, flags:; udp: 1232",
+        "; COOKIE: acd1be41c5a357e30100000067fff63258d2388160c3cd07 (good)",
+        ";; QUESTION SECTION:",
+        ";www.ddns.lab.\t\t\tIN\tA",
+        "",
+        ";; AUTHORITY SECTION:",
+        "ddns.lab.\t\t600\tIN\tSOA\tns01.dns.lab. root.dns.lab. 2711201407 3600 600 86400 600",
+        "",
+        ";; Query time: 2 msec",
+        ";; SERVER: 192.168.50.10#53(192.168.50.10)",
+        ";; WHEN: Wed Apr 16 18:25:54 UTC 2025",
+        ";; MSG SIZE  rcvd: 122"
+    ]
+}
+
+TASK [check audit log] *****************************************************************************************************************************************************************
+changed: [client]
+
+TASK [show client audit log] ***********************************************************************************************************************************************************
+ok: [client] => {
+    "msg": {
+        "changed": true,
+        "cmd": "grep named /var/log/audit/audit.log | audit2why",
+        "delta": "0:00:00.138302",
+        "end": "2025-04-16 18:25:55.080854",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 18:25:54.942552",
+        "stderr": "Nothing to do",
+        "stderr_lines": [
+            "Nothing to do"
+        ],
+        "stdout": "",
+        "stdout_lines": []
+    }
+}
+
+PLAY [server check] ********************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [ns01]
+
+TASK [show block name] *****************************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": "В следующих задачах проверяем, что не так с сервером"
+}
+
+TASK [check audit log] *****************************************************************************************************************************************************************
+changed: [ns01]
+
+TASK [show sever audit log] ************************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": {
+        "changed": true,
+        "cmd": "grep named /var/log/audit/audit.log | audit2why",
+        "delta": "0:00:00.140292",
+        "end": "2025-04-16 18:25:56.326626",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 18:25:56.186334",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "type=AVC msg=audit(1744827954.291:1753): avc:  denied  { write } for  pid=7294 comm=\"isc-net-0000\" name=\"dynamic\" dev=\"sda4\" ino=34041089 scontext=system_u:system_r:named_t:s0 tcontext=unconfined_u:object_r:named_conf_t:s0 tclass=dir permissive=0\n\n\tWas caused by:\n\t\tMissing type enforcement (TE) allow rule.\n\n\t\tYou can use audit2allow to generate a loadable module to allow this access.",
+        "stdout_lines": [
+            "type=AVC msg=audit(1744827954.291:1753): avc:  denied  { write } for  pid=7294 comm=\"isc-net-0000\" name=\"dynamic\" dev=\"sda4\" ino=34041089 scontext=system_u:system_r:named_t:s0 tcontext=unconfined_u:object_r:named_conf_t:s0 tclass=dir permissive=0",
+            "",
+            "\tWas caused by:",
+            "\t\tMissing type enforcement (TE) allow rule.",
+            "",
+            "\t\tYou can use audit2allow to generate a loadable module to allow this access."
+        ]
+    }
+}
+
+TASK [check server named config] *******************************************************************************************************************************************************
+changed: [ns01]
+
+TASK [show server named config] ********************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": [
+        "total 28",
+        "drw-rwx---.  3 root named system_u:object_r:named_conf_t:s0      121 Apr 16 18:24 .",
+        "drwxr-xr-x. 85 root root  system_u:object_r:etc_t:s0            8192 Apr 16 18:24 ..",
+        "drw-rwx---.  2 root named unconfined_u:object_r:named_conf_t:s0   56 Apr 16 18:24 dynamic",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      784 Apr 16 18:24 named.50.168.192.rev",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      610 Apr 16 18:24 named.dns.lab",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      609 Apr 16 18:24 named.dns.lab.view1",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      657 Apr 16 18:24 named.newdns.lab",
+        "total 8",
+        "drw-rwx---. 2 root  named unconfined_u:object_r:named_conf_t:s0  56 Apr 16 18:24 .",
+        "drw-rwx---. 3 root  named system_u:object_r:named_conf_t:s0     121 Apr 16 18:24 ..",
+        "-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab",
+        "-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab.view1"
+    ]
+}
+
+TASK [change context for dynamic] ******************************************************************************************************************************************************
+changed: [ns01]
+
+TASK [check server named config] *******************************************************************************************************************************************************
+changed: [ns01]
+
+TASK [show server named config] ********************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": [
+        "total 28",
+        "drw-rwx---.  3 root named system_u:object_r:named_conf_t:s0      121 Apr 16 18:24 .",
+        "drwxr-xr-x. 85 root root  system_u:object_r:etc_t:s0            8192 Apr 16 18:24 ..",
+        "drw-rwx---.  2 root named unconfined_u:object_r:named_zone_t:s0   56 Apr 16 18:24 dynamic",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      784 Apr 16 18:24 named.50.168.192.rev",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      610 Apr 16 18:24 named.dns.lab",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      609 Apr 16 18:24 named.dns.lab.view1",
+        "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      657 Apr 16 18:24 named.newdns.lab",
+        "total 8",
+        "drw-rwx---. 2 root  named unconfined_u:object_r:named_zone_t:s0  56 Apr 16 18:24 .",
+        "drw-rwx---. 3 root  named system_u:object_r:named_conf_t:s0     121 Apr 16 18:24 ..",
+        "-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab",
+        "-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab.view1"
+    ]
+}
+
+PLAY [check nsupdate again] ************************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [client]
+
+TASK [try change zone-config] **********************************************************************************************************************************************************
+changed: [client]
+
+TASK [show nsupdate res] ***************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "nsupdate",
+            "-k",
+            "/etc/named.zonetransfer.key"
+        ],
+        "delta": "0:00:00.066356",
+        "end": "2025-04-16 18:25:58.217733",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 18:25:58.151377",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "",
+        "stdout_lines": []
+    }
+}
+
+TASK [dns requset] *********************************************************************************************************************************************************************
+changed: [client]
+
+TASK [show dns request] ****************************************************************************************************************************************************************
+ok: [client] => {
+    "msg": [
+        "",
+        "; <<>> DiG 9.16.23-RH <<>> www.ddns.lab",
+        ";; global options: +cmd",
+        ";; Got answer:",
+        ";; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 39349",
+        ";; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1",
+        "",
+        ";; OPT PSEUDOSECTION:",
+        "; EDNS: version: 0, flags:; udp: 1232",
+        "; COOKIE: 2f9961bf27f448d00100000067fff6366e69d4bf12938919 (good)",
+        ";; QUESTION SECTION:",
+        ";www.ddns.lab.\t\t\tIN\tA",
+        "",
+        ";; ANSWER SECTION:",
+        "www.ddns.lab.\t\t60\tIN\tA\t192.168.50.15",
+        "",
+        ";; Query time: 1 msec",
+        ";; SERVER: 192.168.50.10#53(192.168.50.10)",
+        ";; WHEN: Wed Apr 16 18:25:58 UTC 2025",
+        ";; MSG SIZE  rcvd: 85"
+    ]
+}
+
+PLAY [returm context on server] ********************************************************************************************************************************************************
+
+TASK [Gathering Facts] *****************************************************************************************************************************************************************
+ok: [ns01]
+
+TASK [return context] ******************************************************************************************************************************************************************
+changed: [ns01]
+
+TASK [show return res] *****************************************************************************************************************************************************************
+ok: [ns01] => {
+    "msg": {
+        "changed": true,
+        "cmd": "restorecon -v -R /etc/named\nls -alZ /etc/named\nls -alZ /etc/named/dynamic\n",
+        "delta": "0:00:00.010379",
+        "end": "2025-04-16 18:25:59.450359",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-16 18:25:59.439980",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "Relabeled /etc/named/dynamic from unconfined_u:object_r:named_zone_t:s0 to unconfined_u:object_r:named_conf_t:s0\nRelabeled /etc/named/dynamic/named.ddns.lab.view1.jnl from system_u:object_r:named_zone_t:s0 to system_u:object_r:named_conf_t:s0\ntotal 28\ndrw-rwx---.  3 root named system_u:object_r:named_conf_t:s0      121 Apr 16 18:24 .\ndrwxr-xr-x. 85 root root  system_u:object_r:etc_t:s0            8192 Apr 16 18:24 ..\ndrw-rwx---.  2 root named unconfined_u:object_r:named_conf_t:s0   88 Apr 16 18:25 dynamic\n-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      784 Apr 16 18:24 named.50.168.192.rev\n-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      610 Apr 16 18:24 named.dns.lab\n-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      609 Apr 16 18:24 named.dns.lab.view1\n-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      657 Apr 16 18:24 named.newdns.lab\ntotal 12\ndrw-rwx---. 2 root  named unconfined_u:object_r:named_conf_t:s0  88 Apr 16 18:25 .\ndrw-rwx---. 3 root  named system_u:object_r:named_conf_t:s0     121 Apr 16 18:24 ..\n-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab\n-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab.view1\n-rw-r--r--. 1 named named system_u:object_r:named_conf_t:s0     704 Apr 16 18:25 named.ddns.lab.view1.jnl",
+        "stdout_lines": [
+            "Relabeled /etc/named/dynamic from unconfined_u:object_r:named_zone_t:s0 to unconfined_u:object_r:named_conf_t:s0",
+            "Relabeled /etc/named/dynamic/named.ddns.lab.view1.jnl from system_u:object_r:named_zone_t:s0 to system_u:object_r:named_conf_t:s0",
+            "total 28",
+            "drw-rwx---.  3 root named system_u:object_r:named_conf_t:s0      121 Apr 16 18:24 .",
+            "drwxr-xr-x. 85 root root  system_u:object_r:etc_t:s0            8192 Apr 16 18:24 ..",
+            "drw-rwx---.  2 root named unconfined_u:object_r:named_conf_t:s0   88 Apr 16 18:25 dynamic",
+            "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      784 Apr 16 18:24 named.50.168.192.rev",
+            "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      610 Apr 16 18:24 named.dns.lab",
+            "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      609 Apr 16 18:24 named.dns.lab.view1",
+            "-rw-rw----.  1 root named system_u:object_r:named_conf_t:s0      657 Apr 16 18:24 named.newdns.lab",
+            "total 12",
+            "drw-rwx---. 2 root  named unconfined_u:object_r:named_conf_t:s0  88 Apr 16 18:25 .",
+            "drw-rwx---. 3 root  named system_u:object_r:named_conf_t:s0     121 Apr 16 18:24 ..",
+            "-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab",
+            "-rw-rw----. 1 named named system_u:object_r:named_conf_t:s0     509 Apr 16 18:24 named.ddns.lab.view1",
+            "-rw-r--r--. 1 named named system_u:object_r:named_conf_t:s0     704 Apr 16 18:25 named.ddns.lab.view1.jnl"
+        ]
+    }
+}
+
+PLAY RECAP *****************************************************************************************************************************************************************************
+client                     : ok=14   changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=1   
+ns01                       : ok=12   changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+

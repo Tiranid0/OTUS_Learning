@@ -1,0 +1,228 @@
+- name: selinux_nginx
+  hosts: all
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: show block-1 name
+    debug:
+      msg: "__________==========Запустить nginx на нестандартном порту 3-мя разными способам==========__________"
+
+  - name: show step-0 name
+    debug:
+      msg: "__________Проверяем состояние системы сразу после запуска__________"
+
+  - name: check nginx satatus
+    service:
+      name: nginx
+    register: nginx_status
+  - name: show nginx status
+    debug:
+      msg: "nginx state: {{ nginx_status.status.ActiveState }}"
+
+  - name: check firewalld satatus
+    service:
+      name: firewalld
+    register: firewalld_status
+  - name: show firewalld status
+    debug:
+      msg: "firewalld state:{{ firewalld_status.status.ActiveState }}"
+
+  - name: check nginx config
+    command: 'nginx -t'
+    register: nginxt_res
+  - name: show nginx -t 
+    debug:
+      msg: "{{ nginxt_res }}"
+  
+  - name: check selinux mode
+    command: getenforce
+    register: getenforce_res
+  - name: show getenforce
+    debug:
+      msg: "{{ getenforce_res }}"
+
+  - block:
+
+      - name: show step-1 name
+        debug:
+          msg: "__________Разрешим в SELinux работу nginx на порту TCP 4881 c помощью переключателей setsebool__________"
+
+      - name: check logs by audit2why
+        shell: 'grep nginx /var/log/audit/audit.log  | audit2why'
+        register: audit2why_log
+      - name: show audit2why log
+        debug:
+          msg: "{{ audit2why_log }}"
+      
+      - name: turn on nis_enabled option and check status
+        shell: |
+          setsebool -P nis_enabled on
+          getsebool -a | grep nis_enabled
+        register: setsebool_status
+      - name: show setsebool status
+        debug:
+          msg: "{{ setsebool_status }}"
+
+      - name: restart nginx
+        service:
+          name: nginx
+          state: restarted
+        
+      - name: nginx status 
+        service: 
+          name: nginx
+        register: nginx_status
+      - name: show nginx status
+        debug:
+          msg: "nginx state: {{ nginx_status.status.ActiveState }}"
+
+      - name: check http://127.0.0.1:4881
+        uri:
+          url: "http://127.0.0.1:4881"
+          method: HEAD
+          return_content: no
+        register: http_header
+      - name: show http header
+        debug:
+          msg: "{{ http_header }}"
+
+      - name: turn off nis_enabled option for next step and check status
+        shell: |
+          setsebool -P nis_enabled off
+          getsebool -a | grep nis_enabled
+        register: setsebool_status
+      - name: show setsebool status
+        debug:
+          msg: "{{ setsebool_status }}"
+
+      - name: restart nginx
+        service:
+          name: nginx
+          state: restarted
+        ignore_errors: yes
+
+    tags:
+      - setsebool
+    
+  - block:
+
+      - name: show step-2 name
+        debug:
+          msg: "__________Разрешим в SELinux работу nginx на порту TCP 4881 c помощью добавления нестандартного порта в имеющийся тип__________"
+
+      - name: check allowed ports
+        shell: 'semanage port -l | grep http'
+        register: semanage_http
+      - name: show semanage http list
+        debug:
+          msg: "{{ semanage_http }}"
+      
+      - name: add port 4881  and check semanage list
+        shell: |
+          semanage port -a -t http_port_t -p tcp 4881
+          semanage port -l | grep  http_port_t
+        register: semanage_http
+      - name: show semanage http list
+        debug:
+          msg: "{{ semanage_http }}"
+
+      - name: restart nginx
+        service:
+          name: nginx
+          state: restarted
+        
+      - name: nginx status 
+        service: 
+          name: nginx
+        register: nginx_status
+      - name: show nginx status
+        debug:
+          msg: "nginx state: {{ nginx_status.status.ActiveState }}"
+
+      - name: check http://127.0.0.1:4881
+        uri:
+          url: "http://127.0.0.1:4881"
+          method: HEAD
+          return_content: no
+        register: http_header
+      - name: show http header
+        debug:
+          msg: "{{ http_header }}"
+
+      - name: delete port 4881 for next step and check semanage list
+        shell: |
+          semanage port -d -t http_port_t -p tcp 4881
+          semanage port -l | grep  http_port_t
+        register: semanage_http
+      - name: show semanage http list
+        debug:
+          msg: "{{ semanage_http }}"
+
+      - name: restart nginx
+        service:
+          name: nginx
+          state: restarted
+        ignore_errors: yes
+
+    tags: 
+      - semanage
+
+  - block:
+
+      - name: show step-3 name
+        debug:
+          msg: "__________Разрешим в SELinux работу nginx на порту TCP 4881 c помощью формирования и установки модуля SELinux__________"
+
+      - name: check log by audit2allow, set up created module and check module list
+        shell: |
+          grep nginx /var/log/audit/audit.log | audit2allow -M nginx
+          semodule -i nginx.pp
+          semodule -l | grep nginx
+        register: audit2allow_res
+      - name: show audit2allow_res
+        debug: 
+          msg: "{{ audit2allow_res }}"
+
+      - name: restart nginx
+        service:
+          name: nginx
+          state: restarted
+        
+      - name: nginx status 
+        service: 
+          name: nginx
+        register: nginx_status
+      - name: show nginx status
+        debug:
+          msg: "nginx state: {{ nginx_status.status.ActiveState }}"
+
+      - name: check http://127.0.0.1:4881
+        uri:
+          url: "http://127.0.0.1:4881"
+          method: HEAD
+          return_content: no
+        register: http_header
+      - name: show http header
+        debug:
+          msg: "{{ http_header }}"
+
+      - name: delete semodule for next test
+        command: 'semodule -r nginx'
+        register: semoduler_res
+      - name: show semodule -r nginx res
+        debug:
+          msg: "{{ semoduler_res }}"
+
+      - name: restart nginx
+        service:
+          name: nginx
+          state: restarted
+        ignore_errors: yes
+
+    tags: 
+      - semodule
+
+  

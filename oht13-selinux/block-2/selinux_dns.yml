@@ -1,0 +1,128 @@
+- name: try change zone-config
+  hosts: client
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  tasks:
+
+  - name: show block-2 name
+    debug:
+      msg: "__________==========Обеспечение работоспособности приложения при включенном SELinux==========__________"
+
+  - name: prepare nsupdate commands
+    set_fact:
+      nsupdate_commands: |
+        server 192.168.50.10
+        zone ddns.lab
+        update add www.ddns.lab. 60 A 192.168.50.15
+        send
+        quit
+      
+  - name: try change zone-config
+    command: 'nsupdate -k /etc/named.zonetransfer.key'
+    args:
+      stdin: "{{ nsupdate_commands }}"
+    ignore_errors: yes
+    register: nsupdate
+  - name: show nsupdate res 
+    debug:
+      msg: "{{ nsupdate }}"  
+
+  - name: dns requset
+    command: dig www.ddns.lab
+    register: dns_request
+  - name: show dns request
+    debug:
+      msg: "{{ dns_request.stdout.split('\n') }}"
+
+  - name: check audit log
+    shell: 'grep named /var/log/audit/audit.log | audit2why'
+    become: yes
+    register: client_log
+  - name: show client audit log
+    debug:
+      msg: "{{ client_log }}"
+
+- name: server check
+  hosts: ns01
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  become: true
+  tasks:
+
+  - name: show block name
+    debug:
+      msg: "В следующих задачах проверяем, что не так с сервером"
+
+  - name: check audit log
+    shell: 'grep named /var/log/audit/audit.log | audit2why'
+    become: yes
+    register: server_log
+  - name: show sever audit log
+    debug:
+      msg: "{{ server_log }}"
+
+  - name: check server named config
+    shell: |
+      ls -alZ /etc/named
+      ls -alZ /etc/named/dynamic
+    register: server_conf
+  - name: show server named config
+    debug:
+      msg: "{{ server_conf.stdout.split('\n') }}"
+
+  - name: change context for dynamic
+    command: chcon -t named_zone_t /etc/named/dynamic/
+
+  - name: check server named config
+    shell: |
+      ls -alZ /etc/named
+      ls -alZ /etc/named/dynamic
+    register: server_conf
+  - name: show server named config
+    debug:
+      msg: "{{ server_conf.stdout.split('\n') }}"
+
+- name: check nsupdate again
+  hosts: client
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  tasks:
+    - name: try change zone-config
+      command: 'nsupdate -k /etc/named.zonetransfer.key'
+      args:
+        stdin: "{{ nsupdate_commands }}"
+      ignore_errors: yes
+      register: nsupdate
+    - name: show nsupdate res 
+      debug:
+        msg: "{{ nsupdate }}"  
+
+    - name: dns requset
+      command: dig www.ddns.lab
+      register: dns_request
+    - name: show dns request
+      debug:
+        msg: "{{ dns_request.stdout.split('\n') }}"  
+
+- name: returm context on server
+  hosts: ns01
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  become: true
+  tasks:
+
+    - name: return context
+      shell: |
+        restorecon -v -R /etc/named
+        ls -alZ /etc/named
+        ls -alZ /etc/named/dynamic
+      register: return_show
+    - name: show return res 
+      debug: 
+        msg: "{{ return_show }}"
+  
+    

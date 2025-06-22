@@ -1,0 +1,2 @@
+[d13-selinux]
+lvm ansible_host=127.0.0.1 ansible_port=2222 ansible_private_key_file=.vagrant/machines/selinux/virtualbox/private_key
