@@ -1,0 +1,31 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    # Используем бокс Ubuntu 22.04 из официального облака
+    config.vm.box = "generic/ubuntu2204"
+
+    # Настройка виртуальной машины
+    config.vm.provider "virtualbox" do |vb|
+      # ОЗУ
+      vb.memory = "2048"
+      # Ядра
+      vb.cpus = 2
+
+    end
+  
+    # Загрузочный скрипт
+    config.vm.provision "file", source: "./otus_bash.sh", destination: "/home/vagrant/otus_bash.sh"
+    config.vm.provision "file", source: "./access-4560-644067.log", destination: "/home/vagrant/access-4560-644067.log"
+    config.vm.provision "shell", inline: <<-SHELL
+      sudo apt update
+      echo "postfix postfix/mailname string your-domain.com" | sudo debconf-set-selections
+      echo "postfix postfix/main_mailer_type string 'Internet Site'" | sudo debconf-set-selections
+      sudo DEBIAN_FRONTEND=noninteractive apt-get install -y mailutils postfix
+      sudo chown vagrant:vagrant /home/vagrant/otus_bash.sh
+      chmod +x otus_bash.sh
+    SHELL
+    config.vm.provision "file", source: "./otus_bash.sh", destination: "/home/vagrant/otus_bash.sh"
+    config.vm.provision "file", source: "./access-4560-644067.log", destination: "/home/vagrant/access-4560-644067.log"
+    
+  end
