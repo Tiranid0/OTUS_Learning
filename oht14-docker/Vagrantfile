@@ -1,0 +1,32 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    # Используем бокс Ubuntu 22.04 из официального облака
+    config.vm.box = "generic/ubuntu2204"
+
+    # Настройка виртуальной машины
+    config.vm.provider "virtualbox" do |vb|
+      # ОЗУ
+      vb.memory = "2048"
+      # Ядра
+      vb.cpus = 2
+
+    end
+  
+    # Загрузочный скрипт
+    config.vm.provision "shell", inline: <<-SHELL
+    sudo apt update 
+    sudo apt install -y ca-certificates curl
+    sudo install -m 0755 -d /etc/apt/keyrings
+    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+    sudo chmod a+r /etc/apt/keyrings/docker.asc
+    # Add the repository to Apt sources:
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt update
+    sudo apt -y install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    sudo usermod -aG docker $USER
+    docker run hello-world
+    docker compose version
+    SHELL
+  end

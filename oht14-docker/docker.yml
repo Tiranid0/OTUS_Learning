@@ -1,0 +1,156 @@
+- name: docker
+  hosts: all
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  tasks:
+
+  - name: show block-2 name
+    debug:
+      msg: "__________==========Готовим стенд==========__________"
+
+  - name: Install required packages
+    apt:
+      name:
+        - ca-certificates
+        - curl
+      state: present
+      update_cache: yes
+    become: yes
+
+  - name: Create directory for Docker GPG key
+    file:
+      path: /etc/apt/keyrings
+      state: directory
+      mode: '0755'
+    become: yes
+
+  - name: Download Docker GPG key
+    get_url:
+      url: "https://download.docker.com/linux/ubuntu/gpg"
+      dest: /etc/apt/keyrings/docker.asc
+    become: yes
+
+  - name: Add Docker repository
+    ansible.builtin.apt_repository:
+      repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+      state: present
+      filename: docker.list
+      update_cache: yes 
+    become: yes
+
+  - name: Install Docker
+    apt:
+      name: 
+        - docker-ce
+        - docker-ce-cli
+        - containerd.io
+        - docker-buildx-plugin
+        - docker-compose-plugin
+        - python3-requests
+      state: present
+      update_cache: yes
+    become: yes
+
+  - name: Add current user to docker group
+    user:
+      name: vagrant
+      groups: docker
+      append: yes
+    become: yes
+
+  - name: Verify Docker installation
+    command: 'docker run hello-world'
+    register: docker_test
+  - name: Show Docker test result
+    debug:
+      msg: "{{ docker_test.stdout.split('\n') }}"
+
+  - name: Verify Docker Compose installation
+    command: docker compose version
+    register: compose_version
+  - name: Show Docker Compose version
+    debug:
+      msg: "{{ compose_version.stdout }}"
+
+  - name: show block-2 name
+    debug:
+      msg: "__________==========Готовим образ==========__________"
+
+  - name: create docker directory
+    file:
+      path: /home/vagrant/docker
+      state: directory
+    
+  - name: make index.html
+    copy:
+      dest: /home/vagrant/docker/index.html
+      content: |
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Custom Page</title>
+        </head>
+        <body>
+            <h1>( ͡° ͜ʖ ͡°) - it's custom page. yes.</h1>
+            <p>only linux-professionals can see that.</p>
+        </body>
+        </html>
+
+  - name: make Dockerfile
+    copy:
+      dest: /home/vagrant/docker/Dockerfile
+      content: |
+        #Определяем базовый образ Nginx на Alpine
+        FROM nginx:alpine
+        #Обновляем пакеты (зачем? но ладно...)
+        RUN apk update && apk upgrade
+        #Удаляем дефолтную стартовую страницу
+        RUN rm -rf /usr/share/nginx/html/*
+        #Копируем заранее подготовленную стартовую страницу
+        COPY  index.html /usr/share/nginx/html/
+        #Явно указываем порт
+        EXPOSE 80
+        #Команда запуска Nginx - не даем ему уйти в фон
+        CMD ["nginx", "-g", "daemon off;"]
+
+  - name: build image
+    community.docker.docker_image:
+      name: yup26/nginx-image
+      source: build
+      build:
+        path: /home/vagrant/docker
+    register: build_res
+  - name: show build_res
+    debug:
+      msg: "{{ build_res }}"
+
+  - name: show block-2 name
+    debug:
+      msg: "__________==========Проверяем==========__________"
+
+  - name: start container
+    community.docker.docker_container:
+      name: nginx-cont
+      image: yup26/nginx-image
+      state: started
+      ports:
+        - 8080:80
+
+  - name: Verify container status
+    community.docker.docker_container_info:
+      name: nginx-cont
+    register: container_status
+  - name: Display container info
+    debug:
+      msg: "{{ container_status.container.State.Status }}"
+
+  - name: check http://127.0.0.1:4881
+    uri:
+      url: "http://localhost:8080"
+      method: GET
+      return_content: yes
+    register: check_url
+  - name: show check url
+    debug:
+      msg: "{{ check_url }}"

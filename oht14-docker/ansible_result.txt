@@ -1,0 +1,222 @@
+$ ansible-playbook -i hosts docker.yml 
+[WARNING]: Invalid characters were found in group names but not replaced, use
+-vvvv to see details
+
+PLAY [docker] ******************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [docker]
+
+TASK [show block-2 name] *******************************************************
+ok: [docker] => {
+    "msg": "__________==========Готовим стенд==========__________"
+}
+
+TASK [Install required packages] ***********************************************
+ok: [docker]
+
+TASK [Create directory for Docker GPG key] *************************************
+ok: [docker]
+
+TASK [Download Docker GPG key] *************************************************
+ok: [docker]
+
+TASK [Add Docker repository] ***************************************************
+ok: [docker]
+
+TASK [Install Docker] **********************************************************
+ok: [docker]
+
+TASK [Add current user to docker group] ****************************************
+ok: [docker]
+
+TASK [Verify Docker installation] **********************************************
+changed: [docker]
+
+TASK [Show Docker test result] *************************************************
+ok: [docker] => {
+    "msg": [
+        "",
+        "Hello from Docker!",
+        "This message shows that your installation appears to be working correctly.",
+        "",
+        "To generate this message, Docker took the following steps:",
+        " 1. The Docker client contacted the Docker daemon.",
+        " 2. The Docker daemon pulled the \"hello-world\" image from the Docker Hub.",
+        "    (amd64)",
+        " 3. The Docker daemon created a new container from that image which runs the",
+        "    executable that produces the output you are currently reading.",
+        " 4. The Docker daemon streamed that output to the Docker client, which sent it",
+        "    to your terminal.",
+        "",
+        "To try something more ambitious, you can run an Ubuntu container with:",
+        " $ docker run -it ubuntu bash",
+        "",
+        "Share images, automate workflows, and more with a free Docker ID:",
+        " https://hub.docker.com/",
+        "",
+        "For more examples and ideas, visit:",
+        " https://docs.docker.com/get-started/"
+    ]
+}
+
+TASK [Verify Docker Compose installation] **************************************
+changed: [docker]
+
+TASK [Show Docker Compose version] *********************************************
+ok: [docker] => {
+    "msg": "Docker Compose version v2.35.1"
+}
+
+TASK [show block-2 name] *******************************************************
+ok: [docker] => {
+    "msg": "__________==========Готовим образ==========__________"
+}
+
+TASK [create docker directory] *************************************************
+ok: [docker]
+
+TASK [make index.html] *********************************************************
+ok: [docker]
+
+TASK [make Dockerfile] *********************************************************
+ok: [docker]
+
+TASK [build image] *************************************************************
+ok: [docker]
+
+TASK [show build_res] **********************************************************
+ok: [docker] => {
+    "msg": {
+        "actions": [],
+        "changed": false,
+        "failed": false,
+        "image": {
+            "Architecture": "amd64",
+            "Author": "",
+            "Comment": "",
+            "Config": {
+                "AttachStderr": false,
+                "AttachStdin": false,
+                "AttachStdout": false,
+                "Cmd": [
+                    "nginx",
+                    "-g",
+                    "daemon off;"
+                ],
+                "Domainname": "",
+                "Entrypoint": [
+                    "/docker-entrypoint.sh"
+                ],
+                "Env": [
+                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                    "NGINX_VERSION=1.27.5",
+                    "PKG_RELEASE=1",
+                    "DYNPKG_RELEASE=1",
+                    "NJS_VERSION=0.8.10",
+                    "NJS_RELEASE=1"
+                ],
+                "ExposedPorts": {
+                    "80/tcp": {}
+                },
+                "Hostname": "",
+                "Image": "sha256:cce75381e2f9e2e5d89ce5dd83cc972c96c72411e078cdb6ec5b93594b6d1fe2",
+                "Labels": {
+                    "maintainer": "NGINX Docker Maintainers <docker-maint@nginx.com>"
+                },
+                "OnBuild": null,
+                "OpenStdin": false,
+                "StdinOnce": false,
+                "StopSignal": "SIGQUIT",
+                "Tty": false,
+                "User": "",
+                "Volumes": null,
+                "WorkingDir": "/"
+            },
+            "Created": "2025-04-18T21:27:06.568272468Z",
+            "DockerVersion": "28.1.1",
+            "GraphDriver": {
+                "Data": {
+                    "LowerDir": "/var/lib/docker/overlay2/c901e8eb3752851d48c7a5b2095f94b950646dcd2e002689195dcfb09a182de8/diff:/var/lib/docker/overlay2/f1158806be77811f426ffaa84f98ddfc2dadec197b20fc6ed7a50d3f2d410170/diff:/var/lib/docker/overlay2/aae8649cc84761fbfcd574b737e8d333c9b0fad92703fc5b07c3b8aa3e78f1de/diff:/var/lib/docker/overlay2/34a9c3b703beca6b7ea8548b49a177221d390d627fea22995ca1bb2b5facad59/diff:/var/lib/docker/overlay2/1b78a7d26808653d4073011af48729ae3d3e8825130a8491591401dd5a289c4a/diff:/var/lib/docker/overlay2/cbef6ea473f8481e01117a54426e0ce3783055086011d64c68c7fd7c27f2b1fe/diff:/var/lib/docker/overlay2/9804c6ac27b161fa9c14515abd0c48f6236656b32d4965c94962edd23740b544/diff:/var/lib/docker/overlay2/78a1170ecec65ba73b04d005dd594a4c14dec3ea896463ac953bb909ed0a19a9/diff:/var/lib/docker/overlay2/6de708cc6ac14b6e1c14dfc82fc725d16f2e8f43a6414b0719413937649b6082/diff:/var/lib/docker/overlay2/1137d3d1f11183617dd41d282504f89351d8f945893af8cab4c6f58e7cd2b584/diff",
+                    "MergedDir": "/var/lib/docker/overlay2/b38518c88b555f2df250e0b61a3e9a60c7c5734f95220b5a262feffdab4cdce8/merged",
+                    "UpperDir": "/var/lib/docker/overlay2/b38518c88b555f2df250e0b61a3e9a60c7c5734f95220b5a262feffdab4cdce8/diff",
+                    "WorkDir": "/var/lib/docker/overlay2/b38518c88b555f2df250e0b61a3e9a60c7c5734f95220b5a262feffdab4cdce8/work"
+                },
+                "Name": "overlay2"
+            },
+            "Id": "sha256:1e8daa4e7d5767a05f94e6758ebc7781b2fa77aef24a0e24dddd84ad826d7472",
+            "Metadata": {
+                "LastTagTime": "2025-04-18T21:27:06.598488167Z"
+            },
+            "Os": "linux",
+            "Parent": "sha256:cce75381e2f9e2e5d89ce5dd83cc972c96c72411e078cdb6ec5b93594b6d1fe2",
+            "RepoDigests": [],
+            "RepoTags": [
+                "yup26/nginx-image:latest"
+            ],
+            "RootFS": {
+                "Layers": [
+                    "sha256:08000c18d16dadf9553d747a58cf44023423a9ab010aab96cf263d2216b8b350",
+                    "sha256:d71eae0084c1aa823dd8fb2ecf8604d5c0f4911226c042bb1f8297e819f4b192",
+                    "sha256:c56f134d380585340a68d0db2f2c170641a1c0ff72ccf2438cf2f693df756a85",
+                    "sha256:e244aa659f612a80c40dd8645812301e3def6b15ec67b9e486ed2201172b51d1",
+                    "sha256:b8d7d1d2263425d6044e059b2810017d062d659b9b755241f3747eda77726250",
+                    "sha256:811a4dbbf4a5309e4390cf655c12db92e1a4304fb9d9731f83e7b02e95a617c6",
+                    "sha256:947e805a4ac71f68e6703550c0b36c2aa2e554c4fa670ca2da6a25c6d7dccb66",
+                    "sha256:0d853d50b128aa460b47e7121849463a14b18d4fd976caf5014744aae24d28aa",
+                    "sha256:f367bda0ed65e2dcc6a468cdf478cbf7a766d0f798aa884ec4f01594d65d75a5",
+                    "sha256:af334417b1e53307b07f56c28291dd44a38c92e03179e25b30aa1e6b99741260",
+                    "sha256:bb53753598df78eaa8d5a2a5f011cceb657dcf6a9378be12186a4d75fd4c81ce"
+                ],
+                "Type": "layers"
+            },
+            "Size": 50847494
+        }
+    }
+}
+
+TASK [show block-2 name] *******************************************************
+ok: [docker] => {
+    "msg": "__________==========Проверяем==========__________"
+}
+
+TASK [start container] *********************************************************
+ok: [docker]
+
+TASK [Verify container status] *************************************************
+ok: [docker]
+
+TASK [Display container info] **************************************************
+ok: [docker] => {
+    "msg": "running"
+}
+
+TASK [check http://127.0.0.1:4881] *********************************************
+ok: [docker]
+
+TASK [show check url] **********************************************************
+ok: [docker] => {
+    "msg": {
+        "accept_ranges": "bytes",
+        "changed": false,
+        "connection": "close",
+        "content": "<!DOCTYPE html>\n<html>\n<head>\n    <title>Custom Page</title>\n</head>\n<body>\n    <h1>( ͡° ͜ʖ ͡°) - it's custom page. yes.</h1>\n    <p>only linux-professionals can see that.</p>\n</body>\n</html>\n",
+        "content_length": "198",
+        "content_type": "text/html",
+        "cookies": {},
+        "cookies_string": "",
+        "date": "Fri, 18 Apr 2025 21:32:42 GMT",
+        "elapsed": 0,
+        "etag": "\"6802c1d2-c6\"",
+        "failed": false,
+        "last_modified": "Fri, 18 Apr 2025 21:19:14 GMT",
+        "msg": "OK (198 bytes)",
+        "redirected": false,
+        "server": "nginx/1.27.5",
+        "status": 200,
+        "url": "http://localhost:8080"
+    }
+}
+
+PLAY RECAP *********************************************************************
+docker                     : ok=24   changed=2    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  
