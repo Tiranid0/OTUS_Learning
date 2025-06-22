@@ -1,0 +1,146 @@
+- name: pam
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: all
+  become: true
+  remote_user: vagrant
+  tasks:
+
+    - name: show block name
+      debug:
+        msg: "Запретить всем пользователям кроме группы admin логин в выходные (суббота и воскресенье), без учета праздников."
+    
+    - name: add otusadm user
+      user:
+        name: otusadm
+        shell: /bin/bash
+        password: "{{ '12121212' | password_hash('sha256') }}"
+        state: present
+    
+    - name: add otus user
+      user:
+        name: otus
+        shell: /bin/bash
+        password: "{{ '12121212' | password_hash('sha256') }}"
+        state: present
+      
+    - name: create admin group
+      group:
+        name: admin
+        state: present
+
+    - name: Add users to admin group
+      ansible.builtin.user:
+        name: "{{ item }}"
+        groups: admin
+        append: yes
+      loop:
+        - otusadm
+        - root
+        - vagrant
+
+    - name: check otusadm group
+      command: id otusadm | grep -q '(admin)'
+      register: user_in_group
+      ignore_errors: yes
+      changed_when: false
+    - name: Fail if otusadm not in group
+      fail:
+        msg: "User otusadm is not in admin group!"
+      when: user_in_group.stdout != ""
+    - name: Fail if otusadm in group
+      debug:
+        msg: "User otusadm is in admin group!"
+      when: user_in_group.stdout == ""
+
+    - name: copy  pam_bash script in vm
+      copy:
+        src: ./pam_bash.sh
+        dest: /usr/local/bin/login.sh
+
+    - name: change mode for script
+      file: 
+        path: /usr/local/bin/login.sh
+        mode: '0777'
+
+    - name: config /etc/pam.d/sshd
+      lineinfile:
+        path: /etc/pam.d/sshd
+        line: auth required pam_exec.so debug /usr/local/bin/login.sh
+        state: present
+
+    
+    - name: show block name
+      debug:
+        msg: "*Дать конкретному пользователю права работать с докером и возможность перезапускать докер сервис."
+
+    - name: Install required packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+        state: present
+        update_cache: yes
+      become: yes
+
+    - name: Create directory for Docker GPG key
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+      become: yes
+
+    - name: Download Docker GPG key
+      get_url:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+      become: yes
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        filename: docker.list
+        update_cache: yes 
+      become: yes
+
+    - name: Install Docker
+      apt:
+        name: 
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+          - python3-requests
+        state: present
+        update_cache: yes
+      become: yes
+        
+    - name: Add current user to docker group
+      user:
+        name: otus
+        groups: docker
+        append: yes
+
+    - name: Allow all Docker service commands
+      lineinfile:
+        path: /etc/sudoers.d/docker_manage
+        line: "otusadm ALL=(ALL) NOPASSWD: /bin/systemctl * docker*"
+        validate: "visudo -cf %s"
+        create: yes
+        mode: 0440
+    
+    - name: show result
+      debug:
+        msg: "otus user can work with docker"
+
+    - name: change date for test
+      command: 'sudo date -s "2025-04-20 14:30:00"'
+
+    - name: get date
+      command: 'date'
+      register: date
+    - name: show date
+      debug:
+        msg: "today is: {{ date.stdout }}"

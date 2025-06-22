@@ -1,0 +1,152 @@
+Bringing machine 'pam' up with 'virtualbox' provider...
+==> pam: Importing base box 'generic/ubuntu2204'...
+[KProgress: 10%[KProgress: 20%[KProgress: 90%[K==> pam: Matching MAC address for NAT networking...
+==> pam: Checking if box 'generic/ubuntu2204' version '4.3.12' is up to date...
+==> pam: Setting the name of the VM: d16-pam_pam_1745442747775_64523
+==> pam: Clearing any previously set network interfaces...
+==> pam: Preparing network interfaces based on configuration...
+    pam: Adapter 1: nat
+    pam: Adapter 2: hostonly
+==> pam: Forwarding ports...
+    pam: 22 (guest) => 2222 (host) (adapter 1)
+==> pam: Running 'pre-boot' VM customizations...
+==> pam: Booting VM...
+==> pam: Waiting for machine to boot. This may take a few minutes...
+    pam: SSH address: 127.0.0.1:2222
+    pam: SSH username: vagrant
+    pam: SSH auth method: private key
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Connection reset. Retrying...
+    pam: Warning: Remote connection disconnect. Retrying...
+    pam: 
+    pam: Vagrant insecure key detected. Vagrant will automatically replace
+    pam: this with a newly generated keypair for better security.
+    pam: 
+    pam: Inserting generated public key within guest...
+    pam: Removing insecure key from the guest if it's present...
+    pam: Key inserted! Disconnecting and reconnecting using new SSH key...
+==> pam: Machine booted and ready!
+==> pam: Checking for guest additions in VM...
+    pam: The guest additions on this VM do not match the installed version of
+    pam: VirtualBox! In most cases this is fine, but in rare cases it can
+    pam: prevent things such as shared folders from working properly. If you see
+    pam: shared folder errors, please make sure the guest additions within the
+    pam: virtual machine match the version of VirtualBox you have installed on
+    pam: your host and reload your VM.
+    pam: 
+    pam: Guest Additions Version: 6.1.38
+    pam: VirtualBox Version: 7.0
+==> pam: Setting hostname...
+==> pam: Configuring and enabling network interfaces...
+==> pam: Running provisioner: ansible...
+    pam: Running ansible-playbook...
+
+PLAY [pam] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [pam]
+
+TASK [show block name] *********************************************************
+ok: [pam] => {
+    "msg": "Запретить всем пользователям кроме группы admin логин в выходные (суббота и воскресенье), без учета праздников."
+}
+
+TASK [add otusadm user] ********************************************************
+changed: [pam]
+
+TASK [add otus user] ***********************************************************
+changed: [pam]
+
+TASK [create admin group] ******************************************************
+changed: [pam]
+
+TASK [Add users to admin group] ************************************************
+changed: [pam] => (item=otusadm)
+changed: [pam] => (item=root)
+changed: [pam] => (item=vagrant)
+
+TASK [check otusadm group] *****************************************************
+fatal: [pam]: FAILED! => {"changed": false, "cmd": ["id", "otusadm", "|", "grep", "-q", "(admin)"], "delta": "0:00:00.002037", "end": "2025-04-23 21:14:53.279392", "msg": "non-zero return code", "rc": 1, "start": "2025-04-23 21:14:53.277355", "stderr": "id: invalid option -- 'q'\nTry 'id --help' for more information.", "stderr_lines": ["id: invalid option -- 'q'", "Try 'id --help' for more information."], "stdout": "", "stdout_lines": []}
+...ignoring
+
+TASK [Fail if otusadm not in group] ********************************************
+skipping: [pam]
+
+TASK [Fail if otusadm in group] ************************************************
+ok: [pam] => {
+    "msg": "User otusadm is in admin group!"
+}
+
+TASK [copy  pam_bash script in vm] *********************************************
+changed: [pam]
+
+TASK [change mode for script] **************************************************
+changed: [pam]
+
+TASK [config /etc/pam.d/sshd] **************************************************
+changed: [pam]
+
+TASK [show block name] *********************************************************
+ok: [pam] => {
+    "msg": "*Дать конкретному пользователю права работать с докером и возможность перезапускать докер сервис."
+}
+
+TASK [Install required packages] ***********************************************
+ok: [pam]
+
+TASK [Create directory for Docker GPG key] *************************************
+ok: [pam]
+
+TASK [Download Docker GPG key] *************************************************
+changed: [pam]
+
+TASK [Add Docker repository] ***************************************************
+changed: [pam]
+
+TASK [Install Docker] **********************************************************
+changed: [pam]
+
+TASK [Add current user to docker group] ****************************************
+changed: [pam]
+
+TASK [Allow all Docker service commands] ***************************************
+changed: [pam]
+
+TASK [show result] *************************************************************
+ok: [pam] => {
+    "msg": "otus user can work with docker"
+}
+
+TASK [change date for test] ****************************************************
+changed: [pam]
+
+TASK [get date] ****************************************************************
+changed: [pam]
+
+TASK [show date] ***************************************************************
+ok: [pam] => {
+    "msg": "today is: Sun Apr 20 02:30:00 PM UTC 2025"
+}
+
+PLAY RECAP *********************************************************************
+pam                        : ok=23   changed=14   unreachable=0    failed=0    skipped=1    rescued=0    ignored=1   
+
+==> pam: Running provisioner: shell...
+    pam: Running: inline script
