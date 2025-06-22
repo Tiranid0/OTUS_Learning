@@ -1,0 +1,473 @@
+[WARNING]: Invalid characters were found in group names but not replaced, use
+-vvvv to see details
+
+PLAY [NFSS] ********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [nfss]
+
+TASK [nfss configure] **********************************************************
+ok: [nfss] => {
+    "msg": " __________========== NFS_S configure ==========__________ "
+}
+
+TASK [install nfs-kernel-server] ***********************************************
+changed: [nfss]
+
+TASK [create shared directory] *************************************************
+changed: [nfss]
+
+TASK [put info to /etc/exprots] ************************************************
+changed: [nfss]
+
+TASK [reload nfs exp] **********************************************************
+changed: [nfss]
+
+TASK [show current exports] ****************************************************
+changed: [nfss]
+
+TASK [show exps_res] ***********************************************************
+ok: [nfss] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "exportfs",
+            "-s"
+        ],
+        "delta": "0:00:00.003748",
+        "end": "2025-04-24 20:44:02.520486",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:44:02.516738",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "/srv/share  192.168.56.11/32(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)",
+        "stdout_lines": [
+            "/srv/share  192.168.56.11/32(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)"
+        ]
+    }
+}
+
+PLAY [NFS_C] *******************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [nfsc]
+
+TASK [nfsc configure] **********************************************************
+ok: [nfsc] => {
+    "msg": " __________========== NFS_C configure ==========__________ "
+}
+
+TASK [install nfs-kernel-server] ***********************************************
+changed: [nfsc]
+
+TASK [/etc/fstab configure] ****************************************************
+changed: [nfsc]
+
+TASK [daemon-reload] ***********************************************************
+ok: [nfsc]
+
+TASK [restart remote-fs.targer] ************************************************
+changed: [nfsc]
+
+TASK [check shared folder] *****************************************************
+changed: [nfsc]
+
+TASK [show shar_res] ***********************************************************
+ok: [nfsc] => {
+    "msg": {
+        "changed": true,
+        "cmd": "cd /mnt && mount | grep mnt",
+        "delta": "0:00:00.539753",
+        "end": "2025-04-24 20:44:22.379652",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:44:21.839899",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "systemd-1 on /mnt type autofs (rw,relatime,fd=51,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=33036)\n192.168.56.10:/srv/share/ on /mnt type nfs (rw,relatime,vers=3,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.56.10,mountvers=3,mountport=41102,mountproto=udp,local_lock=none,addr=192.168.56.10)",
+        "stdout_lines": [
+            "systemd-1 on /mnt type autofs (rw,relatime,fd=51,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=33036)",
+            "192.168.56.10:/srv/share/ on /mnt type nfs (rw,relatime,vers=3,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.56.10,mountvers=3,mountport=41102,mountproto=udp,local_lock=none,addr=192.168.56.10)"
+        ]
+    }
+}
+
+PLAY [Check] *******************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [nfsc]
+ok: [nfss]
+
+TASK [nfss configure] **********************************************************
+ok: [nfss] => {
+    "msg": " __________========== Check NFS-folder in NFSS==========__________ "
+}
+skipping: [nfsc]
+
+TASK [create test file in nfss] ************************************************
+skipping: [nfsc]
+changed: [nfss]
+
+TASK [check file in nfss] ******************************************************
+skipping: [nfsc]
+changed: [nfss]
+
+TASK [show ls] *****************************************************************
+ok: [nfss] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "ls",
+            "/srv/share/upload"
+        ],
+        "delta": "0:00:00.004234",
+        "end": "2025-04-24 20:44:24.625496",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:44:24.621262",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "check_file",
+        "stdout_lines": [
+            "check_file"
+        ]
+    }
+}
+skipping: [nfsc]
+
+TASK [check file in nfsc] ******************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [show ls] *****************************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "ls",
+            "/mnt/upload"
+        ],
+        "delta": "0:00:00.007179",
+        "end": "2025-04-24 20:44:25.353804",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:44:25.346625",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "check_file",
+        "stdout_lines": [
+            "check_file"
+        ]
+    }
+}
+
+TASK [create test file] ********************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [check file] **************************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [show ls] *****************************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "ls",
+            "/mnt/upload"
+        ],
+        "delta": "0:00:00.006674",
+        "end": "2025-04-24 20:44:26.272446",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:44:26.265772",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "check_file\nclient_file",
+        "stdout_lines": [
+            "check_file",
+            "client_file"
+        ]
+    }
+}
+
+TASK [nfsc configure] **********************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": " __________========== Check NFS-folder in NFSC==========__________ "
+}
+
+TASK [Reboot nfsc] *************************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [check file on nfsc] ******************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [show ls] *****************************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "ls",
+            "/mnt/upload"
+        ],
+        "delta": "0:00:00.015078",
+        "end": "2025-04-24 20:44:56.087307",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:44:56.072229",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "check_file\nclient_file",
+        "stdout_lines": [
+            "check_file",
+            "client_file"
+        ]
+    }
+}
+
+TASK [nfsc configure] **********************************************************
+ok: [nfss] => {
+    "msg": " __________========== Check NFS-folder in NFSS==========__________ "
+}
+skipping: [nfsc]
+
+TASK [Reboot nfsc] *************************************************************
+skipping: [nfsc]
+changed: [nfss]
+
+TASK [check file on nfss] ******************************************************
+skipping: [nfsc]
+changed: [nfss]
+
+TASK [show ls] *****************************************************************
+ok: [nfss] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "ls",
+            "/srv/share/upload"
+        ],
+        "delta": "0:00:00.004928",
+        "end": "2025-04-24 20:45:26.862536",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:45:26.857608",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "check_file\nclient_file",
+        "stdout_lines": [
+            "check_file",
+            "client_file"
+        ]
+    }
+}
+skipping: [nfsc]
+
+TASK [show current exports] ****************************************************
+skipping: [nfsc]
+changed: [nfss]
+
+TASK [show exps_res] ***********************************************************
+ok: [nfss] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "exportfs",
+            "-s"
+        ],
+        "delta": "0:00:00.003567",
+        "end": "2025-04-24 20:45:27.267666",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:45:27.264099",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "/srv/share  192.168.56.11/32(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)",
+        "stdout_lines": [
+            "/srv/share  192.168.56.11/32(sync,wdelay,hide,no_subtree_check,sec=sys,rw,secure,root_squash,no_all_squash)"
+        ]
+    }
+}
+skipping: [nfsc]
+
+TASK [showmount] ***************************************************************
+skipping: [nfsc]
+changed: [nfss]
+
+TASK [show sm_res] *************************************************************
+ok: [nfss] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "showmount",
+            "-a",
+            "192.168.56.10"
+        ],
+        "delta": "0:00:00.049160",
+        "end": "2025-04-24 20:45:27.692225",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:45:27.643065",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "All mount points on 192.168.56.10:\n192.168.56.11:/srv/share",
+        "stdout_lines": [
+            "All mount points on 192.168.56.10:",
+            "192.168.56.11:/srv/share"
+        ]
+    }
+}
+skipping: [nfsc]
+
+TASK [nfsc configure] **********************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": " __________========== Check NFS-folder in NFSC==========__________ "
+}
+
+TASK [Reboot nfsc] *************************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [showmount] ***************************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [show sm_res] *************************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "showmount",
+            "-a",
+            "192.168.56.10"
+        ],
+        "delta": "0:00:00.012301",
+        "end": "2025-04-24 20:46:00.778111",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:46:00.765810",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "All mount points on 192.168.56.10:\n192.168.56.11:/srv/share",
+        "stdout_lines": [
+            "All mount points on 192.168.56.10:",
+            "192.168.56.11:/srv/share"
+        ]
+    }
+}
+
+TASK [check client] ************************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [show mnt_res] ************************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": {
+        "changed": true,
+        "cmd": "cd /mnt/upload/ && mount | grep mnt",
+        "delta": "0:00:00.009182",
+        "end": "2025-04-24 20:46:01.214762",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:46:01.205580",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "systemd-1 on /mnt type autofs (rw,relatime,fd=60,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=19146)\n192.168.56.10:/srv/share/ on /mnt type nfs (rw,relatime,vers=3,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.56.10,mountvers=3,mountport=48595,mountproto=udp,local_lock=none,addr=192.168.56.10)\nnsfs on /run/snapd/ns/lxd.mnt type nsfs (rw)",
+        "stdout_lines": [
+            "systemd-1 on /mnt type autofs (rw,relatime,fd=60,pgrp=1,timeout=0,minproto=5,maxproto=5,direct,pipe_ino=19146)",
+            "192.168.56.10:/srv/share/ on /mnt type nfs (rw,relatime,vers=3,rsize=131072,wsize=131072,namlen=255,hard,proto=tcp,timeo=600,retrans=2,sec=sys,mountaddr=192.168.56.10,mountvers=3,mountport=48595,mountproto=udp,local_lock=none,addr=192.168.56.10)",
+            "nsfs on /run/snapd/ns/lxd.mnt type nsfs (rw)"
+        ]
+    }
+}
+
+TASK [create test file] ********************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [check file] **************************************************************
+skipping: [nfss]
+changed: [nfsc]
+
+TASK [show ls] *****************************************************************
+skipping: [nfss]
+ok: [nfsc] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "ls",
+            "/mnt/upload"
+        ],
+        "delta": "0:00:00.005985",
+        "end": "2025-04-24 20:46:02.181913",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:46:02.175928",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "check_file\nclient_file\nfinal_file",
+        "stdout_lines": [
+            "check_file",
+            "client_file",
+            "final_file"
+        ]
+    }
+}
+
+TASK [check file in nfss] ******************************************************
+skipping: [nfsc]
+changed: [nfss]
+
+TASK [show ls] *****************************************************************
+ok: [nfss] => {
+    "msg": {
+        "changed": true,
+        "cmd": [
+            "ls",
+            "/srv/share/upload"
+        ],
+        "delta": "0:00:00.003559",
+        "end": "2025-04-24 20:46:02.700391",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-24 20:46:02.696832",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "check_file\nclient_file\nfinal_file",
+        "stdout_lines": [
+            "check_file",
+            "client_file",
+            "final_file"
+        ]
+    }
+}
+skipping: [nfsc]
+
+PLAY RECAP *********************************************************************
+nfsc                       : ok=27   changed=14   unreachable=0    failed=0    skipped=14   rescued=0    ignored=0   
+nfss                       : ok=23   changed=12   unreachable=0    failed=0    skipped=18   rescued=0    ignored=0   
+

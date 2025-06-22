@@ -1,0 +1,236 @@
+- name: NFSS
+  hosts: nfss
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: nfss configure
+    debug:
+      msg: " __________========== NFS_S configure ==========__________ "
+
+  - name: install nfs-kernel-server
+    apt: 
+      name: nfs-kernel-server
+      state: present
+      update_cache: yes
+
+  - name: create shared directory
+    file:
+      path: /srv/share/upload
+      state: directory
+      mode: '0777'
+      owner: nobody
+      group: nogroup
+      recurse: yes
+
+  - name: put info to /etc/exprots
+    shell: 'echo "/srv/share 192.168.56.11/32(rw,sync,root_squash)" > /etc/exports'
+
+  - name: reload nfs exp
+    command: exportfs -r 
+
+  - name: show current exports
+    command: exportfs -s
+    register: exps_res
+  - name: show exps_res
+    debug:
+      msg: "{{ exps_res }}"
+
+- name: NFS_C
+  hosts: nfsc
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+  
+  - name: nfsc configure
+    debug:
+      msg: " __________========== NFS_C configure ==========__________ "
+
+  - name: install nfs-kernel-server
+    apt: 
+      name: nfs-common
+      state: present
+      update_cache: yes
+
+  - name: /etc/fstab configure
+    shell: 'echo "192.168.56.10:/srv/share/ /mnt nfs vers=3,noauto,x-systemd.automount 0 0" >> /etc/fstab'
+
+  - name: daemon-reload
+    systemd_service:
+      daemon_reload: true
+
+  - name: restart remote-fs.targer
+    systemd_service:
+      name: remote-fs.target
+      state: restarted
+  
+  - name: check shared folder
+    shell: 'cd /mnt && mount | grep mnt'
+    register: shar_res
+  - name: show shar_res
+    debug:
+      msg: "{{ shar_res }}"
+
+- name: Check
+  hosts: all
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks: 
+ 
+  - name: nfss configure
+    debug:
+      msg: " __________========== Check NFS-folder in NFSS==========__________ "
+    when: inventory_hostname == "nfss"
+
+  - name: create test file in nfss
+    file: 
+      path: /srv/share/upload/check_file
+      state: touch
+    when: inventory_hostname == "nfss"
+
+  - name: check file in nfss
+    command: ls /srv/share/upload
+    register: ls
+    when: inventory_hostname == "nfss"
+  - name: show ls
+    debug: 
+      msg: "{{ ls }}"
+    when: inventory_hostname == "nfss"
+    
+  - name: check file in nfsc
+    command: ls /mnt/upload
+    register: ls
+    when: inventory_hostname == "nfsc"
+  - name: show ls
+    debug: 
+      msg: "{{ ls }}"
+    when: inventory_hostname == "nfsc"  
+  
+  - name: create test file  
+    file: 
+      path: /mnt/upload/client_file
+      state: touch
+    when: inventory_hostname == "nfsc"
+
+  - name: check file
+    command: ls /mnt/upload
+    register: ls
+    when: inventory_hostname == "nfsc"
+  - name: show ls
+    debug: 
+      msg: "{{ ls }}"
+    when: inventory_hostname == "nfsc"
+
+  - name: nfsc configure
+    debug:
+      msg: " __________========== Check NFS-folder in NFSC==========__________ "
+    when: inventory_hostname == "nfsc"
+
+  - name: Reboot nfsc
+    reboot:
+      connect_timeout: 90
+    when: inventory_hostname == "nfsc"
+
+  - name: check file on nfsc
+    command: ls /mnt/upload
+    register: ls
+    when: inventory_hostname == "nfsc"
+  - name: show ls
+    debug: 
+      msg: "{{ ls }}"
+    when: inventory_hostname == "nfsc"
+
+  - name: nfsc configure
+    debug:
+      msg: " __________========== Check NFS-folder in NFSS==========__________ "
+    when: inventory_hostname == "nfss"
+
+  - name: Reboot nfsc
+    reboot:
+      connect_timeout: 90
+    when: inventory_hostname == "nfss"
+
+  - name: check file on nfss
+    command: ls /srv/share/upload
+    register: ls
+    when: inventory_hostname == "nfss"
+  - name: show ls
+    debug: 
+      msg: "{{ ls }}"
+    when: inventory_hostname == "nfss"
+
+  - name: show current exports
+    command: exportfs -s
+    register: exps_res
+    when: inventory_hostname == "nfss"
+  - name: show exps_res
+    debug:
+      msg: "{{ exps_res }}"
+    when: inventory_hostname == "nfss"
+
+  - name: showmount
+    command: showmount -a 192.168.56.10
+    register: sm_res
+    when: inventory_hostname == "nfss"
+  - name: show sm_res
+    debug:
+      msg: "{{ sm_res }}"
+    when: inventory_hostname == "nfss"
+
+  - name: nfsc configure
+    debug:
+      msg: " __________========== Check NFS-folder in NFSC==========__________ "
+    when: inventory_hostname == "nfsc"
+  
+  - name: Reboot nfsc
+    reboot:
+      connect_timeout: 90
+    when: inventory_hostname == "nfsc"
+
+  - name: showmount
+    command: showmount -a 192.168.56.10
+    register: sm_res
+    when: inventory_hostname == "nfsc"
+  - name: show sm_res
+    debug:
+      msg: "{{ sm_res }}"
+    when: inventory_hostname == "nfsc"
+
+  - name: check client
+    shell: 'cd /mnt/upload/ && mount | grep mnt'
+    register: mnt_res
+    when: inventory_hostname == "nfsc"
+  - name: show mnt_res
+    debug:
+      msg: "{{ mnt_res }}"
+    when: inventory_hostname == "nfsc"
+
+  - name: create test file  
+    file: 
+      path: /mnt/upload/final_file
+      state: touch
+    when: inventory_hostname == "nfsc"
+
+  - name: check file
+    command: ls /mnt/upload
+    register: ls
+    when: inventory_hostname == "nfsc"
+  - name: show ls
+    debug: 
+      msg: "{{ ls }}"
+    when: inventory_hostname == "nfsc"
+
+  - name: check file in nfss
+    command: ls /srv/share/upload
+    register: ls
+    when: inventory_hostname == "nfss"
+  - name: show ls
+    debug: 
+      msg: "{{ ls }}"
+    when: inventory_hostname == "nfss"

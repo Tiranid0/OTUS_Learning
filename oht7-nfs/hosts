@@ -1,0 +1,3 @@
+[o_ht-8]
+nfss ansible_host=127.0.0.1 ansible_port=2222 ansible_private_key_file=.vagrant/machines/nfss/virtualbox/private_key
+nfsc ansible_host=127.0.0.1 ansible_port=2200 ansible_private_key_file=.vagrant/machines/nfsc/virtualbox/private_key

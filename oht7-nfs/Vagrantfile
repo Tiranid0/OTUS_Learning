@@ -1,0 +1,33 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    # Используем бокс Ubuntu 22.04 из официального облака
+    config.vm.box = "generic/ubuntu2204"
+
+    # Настройка виртуальной машины
+    config.vm.provider "virtualbox" do |vb|
+      # ОЗУ
+      vb.memory = "1024"
+      # Ядра
+      vb.cpus = 2
+
+    end
+    
+    # Конфигурируем сеть для каждой nfs_s и nfs_c
+    config.vm.define "nfss" do |nfss|
+      nfss.vm.network "private_network", ip: "192.168.56.10"
+      nfss.vm.hostname = "nfss"
+      nfss.vm.provision "shell", inline: <<-SHELL
+      sudo apt update 
+      SHELL
+    end
+    
+     config.vm.define "nfsc" do |nfsc|
+      nfsc.vm.network "private_network", ip: "192.168.56.11"
+      nfsc.vm.hostname = "nfsc"
+      nfsc.vm.provision "shell", inline: <<-SHELL
+      sudo apt update 
+      SHELL
+    end
+  end
