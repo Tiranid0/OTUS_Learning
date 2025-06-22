@@ -1,0 +1,169 @@
+- name: configure time
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: all
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: Set timezone
+    file: 
+      src: /usr/share/zoneinfo/Europe/Moscow
+      dest: /etc/localtime
+      state: link
+  
+  - name: setup ntp
+    command: timedatectl set-ntp true
+
+#web
+- name: webserver
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: web
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: install and check packages
+    apt: 
+      name: 
+        - nginx
+        - auditd
+        - audispd-plugins
+      state: present
+      update_cache: yes
+  
+  - name: remove all old rules
+    shell: 'rm -rf /etc/rsyslog.d/*'
+
+  - name: add rsyslog rule
+    blockinfile:
+      path: /etc/rsyslog.conf
+      block: |
+        module(load="imjournal")
+        *.*;nginx.none @@192.168.56.12:514
+        *.crit /var/log/critical.log
+        *.crit @@192.168.56.12:514
+      state: present
+
+  - name: change nginx conf
+    blockinfile:
+      path: /etc/nginx/nginx.conf
+      insertafter: '^\terror_log /var/log/nginx/error.log;'
+      block: |
+                error_log syslog:server=192.168.56.11:514,tag=nginx_error;
+                access_log syslog:server=192.168.56.11:514,tag=nginx_access,severity=info combined;
+      state: present
+  
+  - name: change nginx.conf
+    lineinfile: 
+      path: /etc/nginx/nginx.conf
+      line: '^\taccess_log /var/log/nginx/access.log;'
+      state: absent
+
+  - name: check nginx service
+    service:
+      name: nginx
+      enabled: yes
+      state: restarted
+
+  - name: restart rsyslog
+    service:
+      name: rsyslog
+      enabled: yes
+      state: restarted
+
+  - name: audit config
+    copy:
+      dest: /etc/audit/rules.d/nginx.rules
+      content: |
+        -w /etc/nginx/nginx.conf -p wa -k nginx_config
+
+  - name: restart auditd
+    service:
+      name: auditd
+      enabled: yes
+      state: restarted
+    
+#log-all
+- name: rsyslog all logs
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: log-all
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: check rsyslog
+    apt: 
+      name: rsyslog
+      state: present
+
+  - name: change rsyslog.conf
+    blockinfile: 
+      path: /etc/rsyslog.conf
+      block: |
+        # provides UDP syslog reception
+        module(load="imudp")
+        input(type="imudp" port="514")
+
+        # provides TCP syslog reception
+        module(load="imtcp")
+        input(type="imtcp" port="514")
+
+        #Add remote log 
+        $template RemoteLogs,"/var/log/rsyslog/%FROMHOST%/%PROGRAMNAME%.log"
+        if ($fromhost-ip != '127.0.0.1') then ?RemoteLogs
+        & ~
+      state: present
+
+  - name: restart rsyslog
+    service: 
+      name: rsyslog
+      state: restarted
+
+ 
+
+#nginx logs
+- name: nginx logs
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: log-nginx
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: check rsyslog
+    apt: 
+      name: 
+        - rsyslog
+        - auditd
+        - audispd-plugins
+      state: present
+
+  - name: change rsyslog.conf
+    blockinfile: 
+      path: /etc/rsyslog.conf
+      block: |
+        # provides UDP syslog reception
+        module(load="imudp")
+        input(type="imudp" port="514")
+
+        # provides TCP syslog reception
+        module(load="imtcp")
+        input(type="imtcp" port="514")
+
+        if $msg contains "nginx_conf" then /var/log/rsyslog/%FROMHOST%/nginx_audit.log
+        & stop
+      state: present
+
+  - name: restart rsyslog
+    service: 
+      name: rsyslog
+      state: restarted
+
+  - name: restart auditd
+    service:
+      name: auditd
+      enabled: yes
+      state: restarted
