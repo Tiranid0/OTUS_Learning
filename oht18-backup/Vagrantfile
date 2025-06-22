@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    # Используем бокс Ubuntu 22.04 из официального облака
+    config.vm.box = "generic/ubuntu2204"
+
+    # Настройка виртуальной машины
+    config.vm.provider "virtualbox" do |vb|
+      # ОЗУ
+      vb.memory = "1024"
+      # Ядра
+      vb.cpus = 2
+
+    end
+    
+    # Конфигурируем сеть для каждой backupserver и client
+    config.vm.define "backupserver" do |backupserver|
+      backupserver.vm.network "private_network", ip: "192.168.56.10"
+      backupserver.vm.hostname = "backupserver"
+      backupserver.vm.provider "virtualbox" do |vb|
+      # Создаем дополнительный диск 2 ГБ
+      unless File.exist?("disk2.vdi")
+        vb.customize [
+          'createhd',
+          '--filename', 'disk2.vdi',
+          '--size', 2048,
+          '--format', 'VDI'
+        ]
+      end
+      
+      # Прикрепляем диск к виртуальной машине
+      vb.customize [
+        'storageattach', :id,
+        '--storagectl', 'SATA Controller',
+        '--port', 1,
+        '--device', 0,
+        '--type', 'hdd',
+        '--medium', 'disk2.vdi'
+      ]
+    end
+    end
+    
+     config.vm.define "client" do |client|
+      client.vm.network "private_network", ip: "192.168.56.11"
+      client.vm.hostname = "client"
+    end
+  end

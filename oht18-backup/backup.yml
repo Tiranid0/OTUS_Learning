@@ -1,0 +1,240 @@
+- name: install borgbackup and ssh moment
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: all
+  remote_user: vagrant
+  become: true
+  tasks:
+
+  - name: borgbackup install
+    apt:
+      name: borgbackup
+      state: present
+      update_cache: yes
+
+  - name: ssh-keygen
+    community.crypto.openssh_keypair: 
+      path: /root/.ssh/id_rsa
+      type: rsa
+      mode: '0600'
+    when: inventory_hostname == "client"
+
+  - name: cat .ssh/id_rsa.pub
+    shell: 'cat /root/.ssh/id_rsa.pub'
+    register: pub_key  
+    when: inventory_hostname == "client"
+    
+  - name: var to bs
+    set_fact:
+      ssh_pub_key: "{{ hostvars['client'].pub_key.stdout }}"
+    delegate_to: backupserver
+ 
+#  - name: copy client pub_key to backupserver
+#    delegate_to: backupserver
+#    copy: 
+#      dest: /home/borg/.ssh/authorized_keys
+#     content: "{{ pub_key.stdout }}"
+#    when: inventory_hostname == "client"
+
+- name: configure backupserver
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: backupserver
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: add borg user
+    user:
+      name: borg
+      shell: /bin/bash
+      password: "{{ 'Otus1234' | password_hash('sha256') }}"
+      state: present
+      create_home: yes
+  
+  - name: create /var/backup directory
+    file: 
+      path: /var/backup
+      state: directory
+      owner: borg
+      group: borg
+
+  - name: Add new partition /dev/sdb1
+    parted: 
+      device: /dev/sdb
+      number: 1
+      state: present
+      part_type: primary
+      fs_type: xfs
+
+  - name: format disk
+    filesystem:
+      fstype: xfs  
+      dev: /dev/sdb1
+      force: yes
+
+  - name: Add entry to /etc/fstab
+    lineinfile:
+      path: /etc/fstab
+      line: "/dev/sdb1  /var/backup  xfs  defaults,uid=borg,gid=borg  0  2"
+      state: present
+      regexp: "^/dev/sdb1"
+
+  - name: Mount disk
+    mount:
+      path: /var/backup
+      src: "/dev/sdb1"
+      fstype: xfs
+      state: mounted
+      opts: defaults
+  
+  - name: create /var/backup directory
+    file: 
+      path: /var/backup
+      state: directory
+      owner: borg
+      group: borg
+  
+  - name: Check lsblk
+    command: 'lsblk'
+    register: lsblk_res
+  - name: show lsblk
+    debug:
+      var: lsblk_res.stdout_lines
+
+  - name: creaate .ssh directory
+    file:
+      path: /home/borg/.ssh
+      state: directory
+      owner: borg
+      group: borg
+      mode: '0700'
+  
+  - name: create .ssh/authorized_keys
+    file:
+      path: /home/borg/.ssh/authorized_keys
+      owner: borg
+      group: borg
+      mode: '0600'
+      state: touch
+
+  - name: add pub_key
+    copy: 
+      dest: /home/borg/.ssh/authorized_keys
+      content: "{{ ssh_pub_key }}"
+
+  - name: restart sshd
+    service:
+      name: sshd
+      state: restarted
+    
+- name: configure client
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  hosts: client
+  remote_user: vagrant
+  tasks:
+  
+  - name: ssh moment
+    shell: |
+      ssh-keyscan 192.168.56.10 >> /root/.ssh/known_hosts
+
+  - name: Check if Borg repo exists
+    shell: |
+      BORG_PASSPHRASE="Otus1234" borg list borg@192.168.56.10:/var/backup/ 2>/dev/null
+    register: borg_repo_exists
+    ignore_errors: yes
+    changed_when: false
+  
+#  - name: delete files in /var/backup
+#    shell: 'ssh borg@192.168.56.10 "rm -rf /var/backup/*"'
+#    when: borg_repo_exists.rc != 0
+
+  - name: borg init
+    shell: |
+      BORG_PASSPHRASE="Otus1234" borg init --encryption=repokey borg@192.168.56.10:/var/backup/
+    register: init
+    when: borg_repo_exists.rc != 0
+  - name: show borg
+    debug: 
+      msg: "{{ init }}"
+
+  - name: create backup service
+    copy: 
+      dest: /etc/systemd/system/borg-backup.service
+      content: |
+        [Unit]
+        Description=Borg Backup
+
+        [Service]
+        Type=oneshot
+
+        # Парольная фраза
+        Environment="BORG_PASSPHRASE=Otus1234"
+        # Репозиторий
+        Environment=REPO=borg@192.168.56.10:/var/backup/
+        # Что бэкапим
+        Environment=BACKUP_TARGET=/etc
+
+        # Логирование в файл с временными метками 
+        ExecStartPre=/bin/bash -c 'echo "==== Borg Backup started at $(date) ====" >> /var/log/borg-backup.log'
+
+        # Создание бэкапа 
+        ExecStart=/bin/sh -c '/bin/borg create --stats ${REPO}::etc-{now:%%Y-%%m-%%d_%%H:%%M:%%S} ${BACKUP_TARGET} >> /var/log/borg-backup.log 2>&1' 
+        ExecStartPost=/bin/sh -c '/bin/borg check ${REPO} >> /var/log/borg-backup.log 2>&1' 
+        ExecStartPost=/bin/sh -c '/bin/borg prune --list --keep-daily 90 --keep-monthly 12 --keep-yearly 1 ${REPO} >> /var/log/borg-backup.log 2>&1'  
+
+        # Фиксация времени завершения
+        ExecStartPost=/bin/bash -c 'echo "==== Borg Backup finished at $(date) ====" >> /var/log/borg-backup.log'
+
+  - name: create backup timer
+    copy:
+      dest: /etc/systemd/system/borg-backup.timer
+      content: |
+        [Unit]
+        Description=Borg Backup
+
+        [Timer]
+        OnBootSec=1sec
+        OnUnitActiveSec=2min
+
+        [Install]
+        WantedBy=timers.target
+
+  - name: start timer
+    service: 
+      name: borg-backup.timer
+      daemon_reload: true
+      enabled: yes
+      state: restarted
+ 
+  - name: 5sec
+    pause:
+      seconds: 5
+    
+  - name: check timer
+    shell: 'systemctl list-timers --all | grep borg'
+    register: timer_list
+  - name: show timer list
+    debug:
+      msg: "{{ timer_list.stdout.split('\n') }}"
+
+  - name: logrotate conf
+    copy:
+      dest: /etc/logrotate.d/borg-backup
+      content: |
+        /var/log/borg-backup.log {
+        daily
+        rotate 7
+        compress
+        missingok
+        notifempty
+        create 640 root adm
+        su root root
+        }
+  
+  - name: logrotate restart
+    service:
+      name: logrotate
+      state: restarted
