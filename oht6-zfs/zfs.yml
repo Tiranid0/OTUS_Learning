@@ -1,0 +1,150 @@
+- name: ZFS
+  hosts: all
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+
+    - name: Show homework block name
+      debug:
+        msg: "__________==========Определение алгоритма с наилучшим сжатием==========__________"
+
+    - name: Check lsblk
+      command: lsblk
+      register: lsblk_res
+    - name: show_lsblk_res
+      debug:
+        msg: " {{ lsblk_res.stdout_lines }}"
+    
+    - name: zfs installation
+      ansible.builtin.apt:
+        name: zfsutils-linux
+        state: present
+        update_cache: yes
+
+    - name: check zfsutils installation
+      command: zfs version
+      register: zfsinst_res
+    - name: show_zfsinst_res
+      debug:
+        msg: "{{ zfsinst_res.stdout_lines }}"
+
+    - name: create 4 zpools
+      shell: |
+        zpool create otus1 mirror /dev/sdb /dev/sdc
+        zpool create otus2 mirror /dev/sdd /dev/sde
+        zpool create otus3 mirror /dev/sdf /dev/sdg
+        zpool create otus4 mirror /dev/sdh /dev/sdi
+        zpool status
+        echo ""
+        zpool list
+        echo ""
+        zfs set compression=lzjb otus1
+        zfs set compression=lz4 otus2
+        zfs set compression=gzip-9 otus3
+        zfs set compression=zle otus4
+        zfs get all | grep compression
+      register: zpools_res
+    - name: show_zpools_res
+      debug:
+        msg: "{{ zpools_res.stdout_lines }}"
+
+    - name: check compression
+      shell: |
+        for i in {1..4}; do wget -P /otus$i https://gutenberg.org/cache/epub/2600/pg2600.converter.log; done
+        ls -l /otus*
+        echo ""
+        zfs list
+        echo ""
+        zfs get all | grep compressratio | grep -v ref
+      register: compress_res
+    - name: show_compress_res
+      debug:
+        msg: "{{ compress_res.stdout_lines }}"
+
+    - name: Show homework block name
+      debug:
+        msg: "__________==========Определение настроек пула==========__________"
+
+    - name: Download test archive
+      get_url: 
+        url: https://drive.usercontent.google.com/download?id=1MvrcEp-WgAQe57aDEzxSRalPAwbNN1Bb&export=download
+        dest: /home/vagrant/archive.tar.gz
+        validate_certs: false
+      register: wget_res
+    - name: show_wget_res
+      debug:
+        msg: "{{ wget_res }}"
+
+    - name: unarchive archive
+      unarchive:
+        src: /home/vagrant/archive.tar.gz
+        dest: /home/vagrant
+        remote_src: yes
+      register: unarch_res
+    - name: show_unarch_res
+      debug:
+        msg: "{{ unarch_res }}"
+    
+    - name: import
+      shell: |
+        zpool import -d zpoolexport/
+        zpool import -d zpoolexport/ otus
+        zpool status
+      register: import_res
+    - name: show_import_res
+      debug:
+        msg: "{{ import_res.stdout_lines }}"
+
+    - name: show parameters
+      shell: |
+        zfs get all otus
+        echo ""
+        zfs get available otus
+        echo ""
+        zfs get readonly otus
+        echo ""
+        zfs get recordsize otus
+        echo ""
+        zfs get compression otus
+        echo ""
+        zfs get checksum otus
+      register: par_res
+    - name: show_par_res
+      debug:
+        msg: "{{ par_res.stdout_lines }}"
+
+    - name: Show homework block name
+      debug:
+        msg: "__________==========Работа со снапшотом, поиск сообщения от преподавателя==========__________"
+
+    - name: Download test file
+      get_url: 
+        url: https://drive.usercontent.google.com/download?id=1wgxjih8YZ-cqLqaZVa0lA3h3Y029c3oI&export=download
+        dest: /home/vagrant/otus_task2.file
+        validate_certs: false
+      register: wget_res
+    - name: show_wget_res
+      debug:
+        msg: "{{ wget_res }}"
+
+    - name: restore fs from file
+      shell: zfs receive otus/test@today < otus_task2.file
+      
+    - name: find message
+      find: 
+        path: /otus/test
+        patterns: "secret_message"
+        recurse: true
+      register: find_res
+    - name: show_find_res
+      debug:
+        msg: "{{ find_res }}"
+
+    - name: show secret message
+      shell: cat {{ find_res.files[0].path }}
+      register: message_res
+    - name: show_message
+      debug:
+        msg: "{{ message_res }}"

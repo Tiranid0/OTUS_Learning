@@ -1,0 +1,40 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    # Используем бокс Ubuntu 22.04 из официального облака
+    config.vm.box = "generic/ubuntu2204"
+     
+    # Настройка виртуальной машины
+    config.vm.provider "virtualbox" do |vb|
+      # ОЗУ
+      vb.memory = "2048"
+      # Ядра
+      vb.cpus = 2
+  
+      # Создаем диски
+      (1..8).each do |i|
+        unless File.exist?("disk#{i}.vdi")
+        vb.customize [
+          "createhd",
+          "--filename", "disk#{i}.vdi",
+          "--size", 1024 # Размер диска в MB (1GB)
+        ]
+        end
+        vb.customize [
+          "storageattach", :id,
+          "--storagectl", "SATA Controller",
+          "--port", i,
+          "--device", 0,
+          "--type", "hdd",
+          "--medium", "disk#{i}.vdi"
+        ]
+      end
+    end
+  
+    # Загрузочный скрипт
+    config.vm.provision "shell", path: "bash_zfs.sh"
+    #config.vm.provision "ansible" do |ansible|
+    #  ansible.playbook = "zfs.yml"
+    #end
+  end

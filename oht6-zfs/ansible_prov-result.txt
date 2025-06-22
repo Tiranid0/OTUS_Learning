@@ -1,0 +1,533 @@
+Bringing machine 'default' up with 'virtualbox' provider...
+==> default: Importing base box 'generic/ubuntu2204'...
+[KProgress: 10%[KProgress: 20%[KProgress: 90%[K==> default: Matching MAC address for NAT networking...
+==> default: Checking if box 'generic/ubuntu2204' version '4.3.12' is up to date...
+==> default: Setting the name of the VM: d-6_default_1745179467242_7384
+==> default: Clearing any previously set network interfaces...
+==> default: Preparing network interfaces based on configuration...
+    default: Adapter 1: nat
+==> default: Forwarding ports...
+    default: 22 (guest) => 2222 (host) (adapter 1)
+==> default: Running 'pre-boot' VM customizations...
+==> default: Booting VM...
+==> default: Waiting for machine to boot. This may take a few minutes...
+    default: SSH address: 127.0.0.1:2222
+    default: SSH username: vagrant
+    default: SSH auth method: private key
+    default: 
+    default: Vagrant insecure key detected. Vagrant will automatically replace
+    default: this with a newly generated keypair for better security.
+    default: 
+    default: Inserting generated public key within guest...
+    default: Removing insecure key from the guest if it's present...
+    default: Key inserted! Disconnecting and reconnecting using new SSH key...
+==> default: Machine booted and ready!
+==> default: Checking for guest additions in VM...
+    default: The guest additions on this VM do not match the installed version of
+    default: VirtualBox! In most cases this is fine, but in rare cases it can
+    default: prevent things such as shared folders from working properly. If you see
+    default: shared folder errors, please make sure the guest additions within the
+    default: virtual machine match the version of VirtualBox you have installed on
+    default: your host and reload your VM.
+    default: 
+    default: Guest Additions Version: 6.1.38
+    default: VirtualBox Version: 7.0
+==> default: Running provisioner: ansible...
+    default: Running ansible-playbook...
+
+PLAY [ZFS] *********************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [default]
+
+TASK [Show homework block name] ************************************************
+ok: [default] => {
+    "msg": "__________==========Определение алгоритма с наилучшим сжатием==========__________"
+}
+
+TASK [Check lsblk] *************************************************************
+changed: [default]
+
+TASK [show_lsblk_res] **********************************************************
+ok: [default] => {
+    "msg": " ['NAME                      MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS', 'loop0                       7:0    0 53.3M  1 loop ', 'sda                         8:0    0  128G  0 disk ', '├─sda1                      8:1    0    1M  0 part ', '├─sda2                      8:2    0    2G  0 part /boot', '└─sda3                      8:3    0  126G  0 part ', '  └─ubuntu--vg-ubuntu--lv 253:0    0   63G  0 lvm  /', 'sdb                         8:16   0    1G  0 disk ', 'sdc                         8:32   0    1G  0 disk ', 'sdd                         8:48   0    1G  0 disk ', 'sde                         8:64   0    1G  0 disk ', 'sdf                         8:80   0    1G  0 disk ', 'sdg                         8:96   0    1G  0 disk ', 'sdh                         8:112  0    1G  0 disk ', 'sdi                         8:128  0    1G  0 disk ']"
+}
+
+TASK [zfs installation] ********************************************************
+changed: [default]
+
+TASK [check zfsutils installation] *********************************************
+changed: [default]
+
+TASK [show_zfsinst_res] ********************************************************
+ok: [default] => {
+    "msg": [
+        "zfs-2.1.5-1ubuntu6~22.04.5",
+        "zfs-kmod-2.1.5-1ubuntu6~22.04.1"
+    ]
+}
+
+TASK [create 4 zpools] *********************************************************
+changed: [default]
+
+TASK [show_zpools_res] *********************************************************
+ok: [default] => {
+    "msg": [
+        "  pool: otus1",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus1       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdb     ONLINE       0     0     0",
+        "\t    sdc     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "  pool: otus2",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus2       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdd     ONLINE       0     0     0",
+        "\t    sde     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "  pool: otus3",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus3       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdf     ONLINE       0     0     0",
+        "\t    sdg     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "  pool: otus4",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus4       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdh     ONLINE       0     0     0",
+        "\t    sdi     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "NAME    SIZE  ALLOC   FREE  CKPOINT  EXPANDSZ   FRAG    CAP  DEDUP    HEALTH  ALTROOT",
+        "otus1   960M   128K   960M        -         -     0%     0%  1.00x    ONLINE  -",
+        "otus2   960M   122K   960M        -         -     0%     0%  1.00x    ONLINE  -",
+        "otus3   960M   128K   960M        -         -     0%     0%  1.00x    ONLINE  -",
+        "otus4   960M   122K   960M        -         -     0%     0%  1.00x    ONLINE  -",
+        "",
+        "otus1  compression           lzjb                   local",
+        "otus2  compression           lz4                    local",
+        "otus3  compression           gzip-9                 local",
+        "otus4  compression           zle                    local"
+    ]
+}
+
+TASK [check compression] *******************************************************
+changed: [default]
+
+TASK [show_compress_res] *******************************************************
+ok: [default] => {
+    "msg": [
+        "/otus1:",
+        "total 0",
+        "",
+        "/otus{1..4}:",
+        "total 40176",
+        "-rw-r--r-- 1 root root 41136901 Apr  2 07:31 pg2600.converter.log",
+        "",
+        "/otus2:",
+        "total 0",
+        "",
+        "/otus3:",
+        "total 0",
+        "",
+        "/otus4:",
+        "total 0",
+        "",
+        "NAME    USED  AVAIL     REFER  MOUNTPOINT",
+        "otus1   117K   832M       24K  /otus1",
+        "otus2   114K   832M       24K  /otus2",
+        "otus3   117K   832M       24K  /otus3",
+        "otus4   114K   832M       24K  /otus4",
+        "",
+        "otus1  compressratio         1.00x                  -",
+        "otus2  compressratio         1.00x                  -",
+        "otus3  compressratio         1.00x                  -",
+        "otus4  compressratio         1.00x                  -"
+    ]
+}
+
+TASK [Show homework block name] ************************************************
+ok: [default] => {
+    "msg": "__________==========Определение настроек пула==========__________"
+}
+
+TASK [Download test archive] ***************************************************
+changed: [default]
+
+TASK [show_wget_res] ***********************************************************
+ok: [default] => {
+    "msg": {
+        "changed": true,
+        "checksum_dest": null,
+        "checksum_src": "eea76ad6a8ec2456912a96bf6ac436b81e748e38",
+        "dest": "/home/vagrant/archive.tar.gz",
+        "elapsed": 11,
+        "failed": false,
+        "gid": 0,
+        "group": "root",
+        "md5sum": "157e13606ae3211a54f6c70e9a62cfd1",
+        "mode": "0644",
+        "msg": "OK (7275140 bytes)",
+        "owner": "root",
+        "size": 7275140,
+        "src": "/home/vagrant/.ansible/tmp/ansible-tmp-1745179535.5568504-42616-263927016900857/tmp6lt6mu8m",
+        "state": "file",
+        "status_code": 200,
+        "uid": 0,
+        "url": "https://drive.usercontent.google.com/download?id=1MvrcEp-WgAQe57aDEzxSRalPAwbNN1Bb&export=download"
+    }
+}
+
+TASK [unarchive archive] *******************************************************
+changed: [default]
+
+TASK [show_unarch_res] *********************************************************
+ok: [default] => {
+    "msg": {
+        "changed": true,
+        "dest": "/home/vagrant",
+        "extract_results": {
+            "cmd": [
+                "/usr/bin/tar",
+                "--extract",
+                "-C",
+                "/home/vagrant",
+                "-z",
+                "-f",
+                "/home/vagrant/archive.tar.gz"
+            ],
+            "err": "",
+            "out": "",
+            "rc": 0
+        },
+        "failed": false,
+        "gid": 1000,
+        "group": "vagrant",
+        "handler": "TgzArchive",
+        "mode": "0750",
+        "owner": "vagrant",
+        "size": 4096,
+        "src": "/home/vagrant/archive.tar.gz",
+        "state": "directory",
+        "uid": 1000
+    }
+}
+
+TASK [import] ******************************************************************
+changed: [default]
+
+TASK [show_import_res] *********************************************************
+ok: [default] => {
+    "msg": [
+        "   pool: otus",
+        "     id: 6554193320433390805",
+        "  state: ONLINE",
+        "status: Some supported features are not enabled on the pool.",
+        "\t(Note that they may be intentionally disabled if the",
+        "\t'compatibility' property is set.)",
+        " action: The pool can be imported using its name or numeric identifier, though",
+        "\tsome features will not be available without an explicit 'zpool upgrade'.",
+        " config:",
+        "",
+        "\totus                                 ONLINE",
+        "\t  mirror-0                           ONLINE",
+        "\t    /home/vagrant/zpoolexport/filea  ONLINE",
+        "\t    /home/vagrant/zpoolexport/fileb  ONLINE",
+        "  pool: otus",
+        " state: ONLINE",
+        "status: Some supported and requested features are not enabled on the pool.",
+        "\tThe pool can still be used, but some features are unavailable.",
+        "action: Enable all features using 'zpool upgrade'. Once this is done,",
+        "\tthe pool may no longer be accessible by software that does not support",
+        "\tthe features. See zpool-features(7) for details.",
+        "config:",
+        "",
+        "\tNAME                                 STATE     READ WRITE CKSUM",
+        "\totus                                 ONLINE       0     0     0",
+        "\t  mirror-0                           ONLINE       0     0     0",
+        "\t    /home/vagrant/zpoolexport/filea  ONLINE       0     0     0",
+        "\t    /home/vagrant/zpoolexport/fileb  ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "  pool: otus1",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus1       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdb     ONLINE       0     0     0",
+        "\t    sdc     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "  pool: otus2",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus2       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdd     ONLINE       0     0     0",
+        "\t    sde     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "  pool: otus3",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus3       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdf     ONLINE       0     0     0",
+        "\t    sdg     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors",
+        "",
+        "  pool: otus4",
+        " state: ONLINE",
+        "config:",
+        "",
+        "\tNAME        STATE     READ WRITE CKSUM",
+        "\totus4       ONLINE       0     0     0",
+        "\t  mirror-0  ONLINE       0     0     0",
+        "\t    sdh     ONLINE       0     0     0",
+        "\t    sdi     ONLINE       0     0     0",
+        "",
+        "errors: No known data errors"
+    ]
+}
+
+TASK [show parameters] *********************************************************
+changed: [default]
+
+TASK [show_par_res] ************************************************************
+ok: [default] => {
+    "msg": [
+        "NAME  PROPERTY              VALUE                  SOURCE",
+        "otus  type                  filesystem             -",
+        "otus  creation              Fri May 15  4:00 2020  -",
+        "otus  used                  2.04M                  -",
+        "otus  available             350M                   -",
+        "otus  referenced            24K                    -",
+        "otus  compressratio         1.00x                  -",
+        "otus  mounted               yes                    -",
+        "otus  quota                 none                   default",
+        "otus  reservation           none                   default",
+        "otus  recordsize            128K                   local",
+        "otus  mountpoint            /otus                  default",
+        "otus  sharenfs              off                    default",
+        "otus  checksum              sha256                 local",
+        "otus  compression           zle                    local",
+        "otus  atime                 on                     default",
+        "otus  devices               on                     default",
+        "otus  exec                  on                     default",
+        "otus  setuid                on                     default",
+        "otus  readonly              off                    default",
+        "otus  zoned                 off                    default",
+        "otus  snapdir               hidden                 default",
+        "otus  aclmode               discard                default",
+        "otus  aclinherit            restricted             default",
+        "otus  createtxg             1                      -",
+        "otus  canmount              on                     default",
+        "otus  xattr                 on                     default",
+        "otus  copies                1                      default",
+        "otus  version               5                      -",
+        "otus  utf8only              off                    -",
+        "otus  normalization         none                   -",
+        "otus  casesensitivity       sensitive              -",
+        "otus  vscan                 off                    default",
+        "otus  nbmand                off                    default",
+        "otus  sharesmb              off                    default",
+        "otus  refquota              none                   default",
+        "otus  refreservation        none                   default",
+        "otus  guid                  14592242904030363272   -",
+        "otus  primarycache          all                    default",
+        "otus  secondarycache        all                    default",
+        "otus  usedbysnapshots       0B                     -",
+        "otus  usedbydataset         24K                    -",
+        "otus  usedbychildren        2.01M                  -",
+        "otus  usedbyrefreservation  0B                     -",
+        "otus  logbias               latency                default",
+        "otus  objsetid              54                     -",
+        "otus  dedup                 off                    default",
+        "otus  mlslabel              none                   default",
+        "otus  sync                  standard               default",
+        "otus  dnodesize             legacy                 default",
+        "otus  refcompressratio      1.00x                  -",
+        "otus  written               24K                    -",
+        "otus  logicalused           1020K                  -",
+        "otus  logicalreferenced     12K                    -",
+        "otus  volmode               default                default",
+        "otus  filesystem_limit      none                   default",
+        "otus  snapshot_limit        none                   default",
+        "otus  filesystem_count      none                   default",
+        "otus  snapshot_count        none                   default",
+        "otus  snapdev               hidden                 default",
+        "otus  acltype               off                    default",
+        "otus  context               none                   default",
+        "otus  fscontext             none                   default",
+        "otus  defcontext            none                   default",
+        "otus  rootcontext           none                   default",
+        "otus  relatime              off                    default",
+        "otus  redundant_metadata    all                    default",
+        "otus  overlay               on                     default",
+        "otus  encryption            off                    default",
+        "otus  keylocation           none                   default",
+        "otus  keyformat             none                   default",
+        "otus  pbkdf2iters           0                      default",
+        "otus  special_small_blocks  0                      default",
+        "",
+        "NAME  PROPERTY   VALUE  SOURCE",
+        "otus  available  350M   -",
+        "",
+        "NAME  PROPERTY  VALUE   SOURCE",
+        "otus  readonly  off     default",
+        "",
+        "NAME  PROPERTY    VALUE    SOURCE",
+        "otus  recordsize  128K     local",
+        "",
+        "NAME  PROPERTY     VALUE           SOURCE",
+        "otus  compression  zle             local",
+        "",
+        "NAME  PROPERTY  VALUE      SOURCE",
+        "otus  checksum  sha256     local"
+    ]
+}
+
+TASK [Show homework block name] ************************************************
+ok: [default] => {
+    "msg": "__________==========Работа со снапшотом, поиск сообщения от преподавателя==========__________"
+}
+
+TASK [Download test file] ******************************************************
+changed: [default]
+
+TASK [show_wget_res] ***********************************************************
+ok: [default] => {
+    "msg": {
+        "changed": true,
+        "checksum_dest": null,
+        "checksum_src": "e490682f5e65e5234c0a6503ff9e1968d4d49d49",
+        "dest": "/home/vagrant/otus_task2.file",
+        "elapsed": 3,
+        "failed": false,
+        "gid": 0,
+        "group": "root",
+        "md5sum": "70e7fb636a4fc3764511ec1d4f573c2c",
+        "mode": "0644",
+        "msg": "OK (5432736 bytes)",
+        "owner": "root",
+        "size": 5432736,
+        "src": "/home/vagrant/.ansible/tmp/ansible-tmp-1745179559.949095-42683-232514172429161/tmpsb2rogws",
+        "state": "file",
+        "status_code": 200,
+        "uid": 0,
+        "url": "https://drive.usercontent.google.com/download?id=1wgxjih8YZ-cqLqaZVa0lA3h3Y029c3oI&export=download"
+    }
+}
+
+TASK [restore fs from file] ****************************************************
+changed: [default]
+
+TASK [find message] ************************************************************
+ok: [default]
+
+TASK [show_find_res] ***********************************************************
+ok: [default] => {
+    "msg": {
+        "changed": false,
+        "examined": 1395,
+        "failed": false,
+        "files": [
+            {
+                "atime": 1701875913.0965204,
+                "ctime": 1701875848.8731387,
+                "dev": 48,
+                "gid": 0,
+                "gr_name": "root",
+                "inode": 1403,
+                "isblk": false,
+                "ischr": false,
+                "isdir": false,
+                "isfifo": false,
+                "isgid": false,
+                "islnk": false,
+                "isreg": true,
+                "issock": false,
+                "isuid": false,
+                "mode": "0644",
+                "mtime": 1701875848.8731387,
+                "nlink": 1,
+                "path": "/otus/test/task1/file_mess/secret_message",
+                "pw_name": "root",
+                "rgrp": true,
+                "roth": true,
+                "rusr": true,
+                "size": 35,
+                "uid": 0,
+                "wgrp": false,
+                "woth": false,
+                "wusr": true,
+                "xgrp": false,
+                "xoth": false,
+                "xusr": false
+            }
+        ],
+        "matched": 1,
+        "msg": "All paths examined",
+        "skipped_paths": {}
+    }
+}
+
+TASK [show secret message] *****************************************************
+changed: [default]
+
+TASK [show_message] ************************************************************
+ok: [default] => {
+    "msg": {
+        "changed": true,
+        "cmd": "cat /otus/test/task1/file_mess/secret_message",
+        "delta": "0:00:00.003398",
+        "end": "2025-04-20 20:06:03.689480",
+        "failed": false,
+        "msg": "",
+        "rc": 0,
+        "start": "2025-04-20 20:06:03.686082",
+        "stderr": "",
+        "stderr_lines": [],
+        "stdout": "https://otus.ru/lessons/linux-hl/",
+        "stdout_lines": [
+            "https://otus.ru/lessons/linux-hl/"
+        ]
+    }
+}
+
+PLAY RECAP *********************************************************************
+default                    : ok=28   changed=12   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+
