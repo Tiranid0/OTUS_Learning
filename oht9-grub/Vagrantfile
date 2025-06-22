@@ -1,0 +1,20 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    # Используем бокс Ubuntu 22.04 из официального облака
+    config.vm.box = "generic/ubuntu2204"
+
+    # Настройка виртуальной машины
+    config.vm.provider "virtualbox" do |vb|
+      # ОЗУ
+      vb.memory = "2048"
+      # Ядра
+      vb.cpus = 2
+
+    end
+  
+    # Загрузочный скрипт
+    config.vm.provision "shell", inline: <<-SHELL
+    SHELL
+  end
