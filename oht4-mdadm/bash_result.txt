@@ -1,0 +1,341 @@
+Проверяем доступность дополнительных дисков
+NAME                      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+loop0                       7:0    0  63.4M  1 loop /snap/core20/1974
+loop1                       7:1    0 111.9M  1 loop /snap/lxd/24322
+loop2                       7:2    0  53.3M  1 loop /snap/snapd/19457
+loop3                       7:3    0  44.4M  1 loop /snap/snapd/23545
+loop4                       7:4    0  89.4M  1 loop /snap/lxd/31333
+sda                         8:0    0   128G  0 disk
+├─sda1                      8:1    0     1M  0 part
+├─sda2                      8:2    0     2G  0 part /boot
+└─sda3                      8:3    0   126G  0 part
+  └─ubuntu--vg-ubuntu--lv 253:0    0    63G  0 lvm  /
+sdb                         8:16   0     1G  0 disk
+sdc                         8:32   0     1G  0 disk
+sdd                         8:48   0     1G  0 disk
+sde                         8:64   0     1G  0 disk
+sdf                         8:80   0     1G  0 disk
+sdg                         8:96   0     1G  0 disk
+
+Создаем RAID6 и проверяем статус
+mdadm: Unrecognised md component device - /dev/sdb
+mdadm: Unrecognised md component device - /dev/sdc
+mdadm: Unrecognised md component device - /dev/sdd
+mdadm: Unrecognised md component device - /dev/sde
+mdadm: Unrecognised md component device - /dev/sdf
+mdadm: Unrecognised md component device - /dev/sdg
+mdadm: layout defaults to left-symmetric
+mdadm: layout defaults to left-symmetric
+mdadm: chunk size defaults to 512K
+mdadm: size set to 1046528K
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+
+Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+md0 : active raid6 sde[3] sdd[2] sdc[1] sdb[0]
+      2093056 blocks super 1.2 level 6, 512k chunk, algorithm 2 [4/4] [UUUU]
+      [>....................]  resync =  0.0% (88/1046528) finish=181.6min speed=88K/sec
+
+unused devices: <none>
+
+/dev/md0:
+           Version : 1.2
+     Creation Time : Sun Feb 23 14:55:00 2025
+        Raid Level : raid6
+        Array Size : 2093056 (2044.00 MiB 2143.29 MB)
+     Used Dev Size : 1046528 (1022.00 MiB 1071.64 MB)
+      Raid Devices : 4
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Sun Feb 23 14:55:00 2025
+             State : clean, resyncing
+    Active Devices : 4
+   Working Devices : 4
+    Failed Devices : 0
+     Spare Devices : 0
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+     Resync Status : 0% complete
+
+              Name : ubuntu2204.localdomain:0  (local to host ubuntu2204.localdomain)
+              UUID : f91527eb:82a98dfe:10df2171:175c7c3a
+            Events : 0
+
+    Number   Major   Minor   RaidDevice State
+       0       8       16        0      active sync   /dev/sdb
+       1       8       32        1      active sync   /dev/sdc
+       2       8       48        2      active sync   /dev/sdd
+       3       8       64        3      active sync   /dev/sde
+
+Создаем конфигурационный файл mdadm.conf
+ARRAY /dev/md0 level=raid6 num-devices=4 metadata=1.2 name=ubuntu2204.localdomain:0 UUID=f91527eb:82a98dfe:10df2171:175c7c3a
+   devices=/dev/sdb,/dev/sdc,/dev/sdd,/dev/sde
+mkdir: cannot create directory ‘/etc/mdadm’: File exists
+ARRAY /dev/md0 level=raid6 num-devices=4 metadata=1.2 name=ubuntu2204.localdomain:0 UUID=f91527eb:82a98dfe:10df2171:175c7c3a
+
+Ломаем RAID6 - переводим в fail 2 диска
+mdadm: set /dev/sdc faulty in /dev/md0
+mdadm: set /dev/sde faulty in /dev/md0
+Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+md0 : active raid6 sde[3](F) sdd[2] sdc[1](F) sdb[0]
+      2093056 blocks super 1.2 level 6, 512k chunk, algorithm 2 [4/2] [U_U_]
+      [>....................]  resync =  0.8% (8732/1046528) finish=1.9min speed=8732K/sec
+
+unused devices: <none>
+/dev/md0:
+           Version : 1.2
+     Creation Time : Sun Feb 23 14:55:00 2025
+        Raid Level : raid6
+        Array Size : 2093056 (2044.00 MiB 2143.29 MB)
+     Used Dev Size : 1046528 (1022.00 MiB 1071.64 MB)
+      Raid Devices : 4
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Sun Feb 23 14:55:00 2025
+             State : clean, degraded, resyncing (PENDING)
+    Active Devices : 2
+   Working Devices : 2
+    Failed Devices : 2
+     Spare Devices : 0
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : ubuntu2204.localdomain:0  (local to host ubuntu2204.localdomain)
+              UUID : f91527eb:82a98dfe:10df2171:175c7c3a
+            Events : 4
+
+    Number   Major   Minor   RaidDevice State
+       0       8       16        0      active sync   /dev/sdb
+       1       8       32        1      faulty   /dev/sdc
+       2       8       48        2      active sync   /dev/sdd
+       3       8       64        3      faulty   /dev/sde
+
+Чиним RAID6
+mdadm: hot removed /dev/sdc from /dev/md0
+mdadm: hot removed /dev/sde from /dev/md0
+mdadm: added /dev/sdf
+mdadm: added /dev/sdg
+Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+md0 : active raid6 sdg[5](S) sdf[4](S) sdd[2] sdb[0]
+      2093056 blocks super 1.2 level 6, 512k chunk, algorithm 2 [4/2] [U_U_]
+
+unused devices: <none>
+/dev/md0:
+           Version : 1.2
+     Creation Time : Sun Feb 23 14:55:00 2025
+        Raid Level : raid6
+        Array Size : 2093056 (2044.00 MiB 2143.29 MB)
+     Used Dev Size : 1046528 (1022.00 MiB 1071.64 MB)
+      Raid Devices : 4
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Sun Feb 23 14:55:00 2025
+             State : clean, degraded, recovering
+    Active Devices : 2
+   Working Devices : 4
+    Failed Devices : 0
+     Spare Devices : 2
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+    Rebuild Status : 0% complete
+
+              Name : ubuntu2204.localdomain:0  (local to host ubuntu2204.localdomain)
+              UUID : f91527eb:82a98dfe:10df2171:175c7c3a
+            Events : 11
+
+    Number   Major   Minor   RaidDevice State
+       0       8       16        0      active sync   /dev/sdb
+       5       8       96        1      spare rebuilding   /dev/sdg
+       2       8       48        2      active sync   /dev/sdd
+       4       8       80        3      spare rebuilding   /dev/sdf
+
+Ждем 30 секунд, пока RAID ребилдится...
+
+Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+md0 : active raid6 sdg[5] sdf[4] sdd[2] sdb[0]
+      2093056 blocks super 1.2 level 6, 512k chunk, algorithm 2 [4/4] [UUUU]
+
+unused devices: <none>
+/dev/md0:
+           Version : 1.2
+     Creation Time : Sun Feb 23 14:55:00 2025
+        Raid Level : raid6
+        Array Size : 2093056 (2044.00 MiB 2143.29 MB)
+     Used Dev Size : 1046528 (1022.00 MiB 1071.64 MB)
+      Raid Devices : 4
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Sun Feb 23 14:55:15 2025
+             State : clean
+    Active Devices : 4
+   Working Devices : 4
+    Failed Devices : 0
+     Spare Devices : 0
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : ubuntu2204.localdomain:0  (local to host ubuntu2204.localdomain)
+              UUID : f91527eb:82a98dfe:10df2171:175c7c3a
+            Events : 28
+
+    Number   Major   Minor   RaidDevice State
+       0       8       16        0      active sync   /dev/sdb
+       5       8       96        1      active sync   /dev/sdg
+       2       8       48        2      active sync   /dev/sdd
+       4       8       80        3      active sync   /dev/sdf
+
+Создаем GPT-раздел, пять партиций и монтируем их на диск
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+Information: You may need to update /etc/fstab.
+
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/md0p1 contains a ext4 file system
+        last mounted on Sun Feb 23 14:53:13 2025
+Creating filesystem with 104448 4k blocks and 104448 inodes
+Filesystem UUID: 6c2d192b-27bd-4cb3-8998-c2a55471df79
+Superblock backups stored on blocks:
+        32768, 98304
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (4096 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/md0p2 contains a ext4 file system
+        last mounted on Sun Feb 23 14:53:13 2025
+Creating filesystem with 104704 4k blocks and 104704 inodes
+Filesystem UUID: 709a0775-fa33-4e55-ab43-c4c220dda635
+Superblock backups stored on blocks:
+        32768, 98304
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (4096 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/md0p3 contains a ext4 file system
+        last mounted on Sun Feb 23 14:53:13 2025
+Creating filesystem with 104448 4k blocks and 104448 inodes
+Filesystem UUID: ff16e65d-93c0-401f-a575-0db51e9d95ca
+Superblock backups stored on blocks:
+        32768, 98304
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (4096 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/md0p4 contains a ext4 file system
+        last mounted on Sun Feb 23 14:53:13 2025
+Creating filesystem with 104704 4k blocks and 104704 inodes
+Filesystem UUID: c8f95bc1-3f0d-470a-ad8d-1a99be836113
+Superblock backups stored on blocks:
+        32768, 98304
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (4096 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+mke2fs 1.46.5 (30-Dec-2021)
+/dev/md0p5 contains a ext4 file system
+        last mounted on Sun Feb 23 14:53:13 2025
+Creating filesystem with 104448 4k blocks and 104448 inodes
+Filesystem UUID: 28f01d5e-62c3-462f-bb42-4cafce99344e
+Superblock backups stored on blocks:
+        32768, 98304
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (4096 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+NAME                      MAJ:MIN RM   SIZE RO TYPE  MOUNTPOINTS
+loop0                       7:0    0  63.4M  1 loop  /snap/core20/1974
+loop1                       7:1    0 111.9M  1 loop  /snap/lxd/24322
+loop2                       7:2    0  53.3M  1 loop  /snap/snapd/19457
+loop3                       7:3    0  44.4M  1 loop  /snap/snapd/23545
+loop4                       7:4    0  89.4M  1 loop  /snap/lxd/31333
+sda                         8:0    0   128G  0 disk
+├─sda1                      8:1    0     1M  0 part
+├─sda2                      8:2    0     2G  0 part  /boot
+└─sda3                      8:3    0   126G  0 part
+  └─ubuntu--vg-ubuntu--lv 253:0    0    63G  0 lvm   /
+sdb                         8:16   0     1G  0 disk
+└─md0                       9:0    0     2G  0 raid6
+  ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+  ├─md0p2                 259:4    0   409M  0 part  /raid/part2
+  ├─md0p3                 259:5    0   408M  0 part  /raid/part3
+  ├─md0p4                 259:8    0   409M  0 part  /raid/part4
+  └─md0p5                 259:9    0   408M  0 part  /raid/part5
+sdc                         8:32   0     1G  0 disk
+sdd                         8:48   0     1G  0 disk
+└─md0                       9:0    0     2G  0 raid6
+  ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+  ├─md0p2                 259:4    0   409M  0 part  /raid/part2
+  ├─md0p3                 259:5    0   408M  0 part  /raid/part3
+  ├─md0p4                 259:8    0   409M  0 part  /raid/part4
+  └─md0p5                 259:9    0   408M  0 part  /raid/part5
+sde                         8:64   0     1G  0 disk
+sdf                         8:80   0     1G  0 disk
+└─md0                       9:0    0     2G  0 raid6
+  ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+  ├─md0p2                 259:4    0   409M  0 part  /raid/part2
+  ├─md0p3                 259:5    0   408M  0 part  /raid/part3
+  ├─md0p4                 259:8    0   409M  0 part  /raid/part4
+  └─md0p5                 259:9    0   408M  0 part  /raid/part5
+sdg                         8:96   0     1G  0 disk
+└─md0                       9:0    0     2G  0 raid6
+  ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+  ├─md0p2                 259:4    0   409M  0 part  /raid/part2
+  ├─md0p3                 259:5    0   408M  0 part  /raid/part3
+  ├─md0p4                 259:8    0   409M  0 part  /raid/part4
+  └─md0p5                 259:9    0   408M  0 part  /raid/part5
+
+Удаляем RAID6 для повторного прогона
+mdadm: stopped /dev/md0
+NAME                      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+loop0                       7:0    0  63.4M  1 loop /snap/core20/1974
+loop1                       7:1    0 111.9M  1 loop /snap/lxd/24322
+loop2                       7:2    0  53.3M  1 loop /snap/snapd/19457
+loop3                       7:3    0  44.4M  1 loop /snap/snapd/23545
+loop4                       7:4    0  89.4M  1 loop /snap/lxd/31333
+sda                         8:0    0   128G  0 disk
+├─sda1                      8:1    0     1M  0 part
+├─sda2                      8:2    0     2G  0 part /boot
+└─sda3                      8:3    0   126G  0 part
+  └─ubuntu--vg-ubuntu--lv 253:0    0    63G  0 lvm  /
+sdb                         8:16   0     1G  0 disk
+sdc                         8:32   0     1G  0 disk
+sdd                         8:48   0     1G  0 disk
+sde                         8:64   0     1G  0 disk
+sdf                         8:80   0     1G  0 disk
+sdg                         8:96   0     1G  0 disk

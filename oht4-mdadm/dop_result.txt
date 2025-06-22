@@ -1,0 +1,278 @@
+yup@yup-laptop:~/dz4-1$ vagrant up --provision
+Bringing machine 'default' up with 'virtualbox' provider...
+==> default: Checking if box 'generic/ubuntu2204' version '4.3.12' is up to date...
+==> default: Clearing any previously set forwarded ports...
+==> default: Clearing any previously set network interfaces...
+==> default: Preparing network interfaces based on configuration...
+    default: Adapter 1: nat
+    default: Adapter 2: hostonly
+==> default: Forwarding ports...
+    default: 22 (guest) => 2222 (host) (adapter 1)
+==> default: Running 'pre-boot' VM customizations...
+==> default: Booting VM...
+==> default: Waiting for machine to boot. This may take a few minutes...
+    default: SSH address: 127.0.0.1:2222
+    default: SSH username: vagrant
+    default: SSH auth method: private key
+    default: Warning: Connection reset. Retrying...
+    default: Warning: Remote connection disconnect. Retrying...
+==> default: Machine booted and ready!
+==> default: Checking for guest additions in VM...
+    default: The guest additions on this VM do not match the installed version of
+    default: VirtualBox! In most cases this is fine, but in rare cases it can
+    default: prevent things such as shared folders from working properly. If you see
+    default: shared folder errors, please make sure the guest additions within the
+    default: virtual machine match the version of VirtualBox you have installed on
+    default: your host and reload your VM.
+    default:
+    default: Guest Additions Version: 6.1.38
+    default: VirtualBox Version: 7.0
+==> default: Configuring and enabling network interfaces...
+==> default: Running provisioner: file...
+    default: ./start_raid.sh => /home/vagrant/start_raid.sh
+==> default: Running provisioner: shell...
+    default: Running: inline script
+    default: Hit:1 https://mirrors.edge.kernel.org/ubuntu jammy InRelease
+    default: Hit:2 https://mirrors.edge.kernel.org/ubuntu jammy-updates InRelease
+    default: Hit:3 https://mirrors.edge.kernel.org/ubuntu jammy-backports InRelease
+    default: Hit:4 https://mirrors.edge.kernel.org/ubuntu jammy-security InRelease
+    default: Reading package lists...
+    default: Reading package lists...
+    default: Building dependency tree...
+    default: Reading state information...
+    default: Calculating upgrade...
+    default: The following packages have been kept back:
+    default:   linux-cloud-tools-virtual linux-generic linux-headers-generic
+    default:   linux-image-generic sosreport ubuntu-advantage-tools ubuntu-pro-client-l10n
+    default: The following packages will be upgraded:
+    default:   amd64-microcode apparmor apport apt apt-utils base-files bash bind9-dnsutils
+    default:   bind9-host bind9-libs binutils binutils-common binutils-x86-64-linux-gnu
+    default:   bsdextrautils bsdutils busybox-initramfs busybox-static ca-certificates
+    default:   coreutils cpio curl distro-info-data dmidecode dpkg e2fsprogs eject ethtool
+    default:   fdisk firmware-sof-signed gir1.2-packagekitglib-1.0 git git-man
+    default:   intel-microcode iptables klibc-utils landscape-common less libapparmor1
+    default:   libapt-pkg6.0 libarchive13 libbinutils libblkid1 libc-bin libc6 libcom-err2
+    default:   libctf-nobfd0 libctf0 libcurl3-gnutls libcurl4 libexpat1 libext2fs2
+    default:   libfdisk1 libglib2.0-0 libglib2.0-bin libglib2.0-data libgnutls30 libgpgme11
+    default:   libgssapi-krb5-2 libgstreamer1.0-0 libip4tc2 libip6tc2 libk5crypto3 libklibc
+    default:   libkrb5-3 libkrb5support0 libldap-2.5-0 libldap-common libmbim-glib4
+    default:   libmbim-proxy libmm-glib0 libmodule-scandeps-perl libmount1 libnetplan0
+    default:   libnghttp2-14 libnspr4 libnss-systemd libnss3 libpackagekit-glib2-18
+    default:   libpam-modules libpam-modules-bin libpam-runtime libpam-systemd libpam0g
+    default:   libpcap0.8 libpython3-stdlib libpython3.10 libpython3.10-minimal
+    default:   libpython3.10-stdlib libruby3.0 libseccomp2 libsmartcols1 libss2 libssh-4
+    default:   libssl3 libsystemd0 libtasn1-6 libtss2-esys-3.0.2-0 libtss2-mu0 libtss2-sys1
+    default:   libtss2-tcti-cmd0 libtss2-tcti-device0 libtss2-tcti-mssim0
+    default:   libtss2-tcti-swtpm0 libudev1 libuuid1 libuv1 libxml2 libxtables12
+    default:   linux-cloud-tools-common linux-firmware locales login logsave modemmanager
+    default:   motd-news-config mount nano needrestart netplan.io open-vm-tools
+    default:   openssh-client openssh-server openssh-sftp-server openssl packagekit
+    default:   packagekit-tools passwd python-apt-common python3 python3-apport python3-apt
+    default:   python3-configobj python3-cryptography python3-distupgrade python3-idna
+    default:   python3-minimal python3-pkg-resources python3-problem-report
+    default:   python3-setuptools python3-twisted python3-update-manager python3-zipp
+    default:   python3.10 python3.10-minimal rsync ruby-webrick ruby3.0 snapd systemd
+    default:   systemd-hwe-hwdb systemd-sysv systemd-timesyncd tcpdump tzdata
+    default:   ubuntu-drivers-common ubuntu-minimal ubuntu-release-upgrader-core
+    default:   ubuntu-server ubuntu-standard udev unzip update-manager-core
+    default:   update-notifier-common util-linux uuid-runtime vim vim-common vim-nox
+    default:   vim-runtime vim-tiny virtualbox-guest-utils wget wireless-regdb xfsprogs xxd
+    default: 175 upgraded, 0 newly installed, 0 to remove and 7 not upgraded.
+    default: Need to get 436 MB of archives.
+    default: After this operation, 81.5 MB of additional disk space will be used.
+    default: Do you want to continue? [Y/n] Abort.
+    default: Reading package lists...
+    default: Building dependency tree...
+    default: Reading state information...
+    default: gdisk is already the newest version (1.0.8-4build1).
+    default: hdparm is already the newest version (9.60+ds-1build3).
+    default: mdadm is already the newest version (4.2-0ubuntu2).
+    default: smartmontools is already the newest version (7.2-1ubuntu0.1).
+    default: 0 upgraded, 0 newly installed, 0 to remove and 182 not upgraded.
+    default: Проверяем доступность дополнительных дисков
+    default: NAME                      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS
+    default: loop0                       7:0    0  63.4M  1 loop /snap/core20/1974
+    default: loop1                       7:1    0  53.3M  1 loop /snap/snapd/19457
+    default: loop2                       7:2    0 111.9M  1 loop /snap/lxd/24322
+    default: loop3                       7:3    0  44.4M  1 loop /snap/snapd/23545
+    default: loop4                       7:4    0  89.4M  1 loop /snap/lxd/31333
+    default: sda                         8:0    0   128G  0 disk
+    default: ├─sda1                      8:1    0     1M  0 part
+    default: ├─sda2                      8:2    0     2G  0 part /boot
+    default: └─sda3                      8:3    0   126G  0 part
+    default:   └─ubuntu--vg-ubuntu--lv 253:0    0    63G  0 lvm  /
+    default: sdb                         8:16   0     1G  0 disk
+    default: sdc                         8:32   0     1G  0 disk
+    default: sdd                         8:48   0     1G  0 disk
+    default: sde                         8:64   0     1G  0 disk
+    default: sdf                         8:80   0     1G  0 disk
+    default: sdg                         8:96   0     1G  0 disk
+    default:
+    default: Создаем RAID6 и проверяем статус
+    default: mdadm: Unrecognised md component device - /dev/sdb
+    default: mdadm: Unrecognised md component device - /dev/sdc
+    default: mdadm: Unrecognised md component device - /dev/sdd
+    default: mdadm: Unrecognised md component device - /dev/sde
+    default: mdadm: Unrecognised md component device - /dev/sdf
+    default: mdadm: Unrecognised md component device - /dev/sdg
+    default: mdadm: layout defaults to left-symmetric
+    default: mdadm: layout defaults to left-symmetric
+    default: mdadm: chunk size defaults to 512K
+    default: mdadm: size set to 1046528K
+    default: mdadm: Defaulting to version 1.2 metadata
+    default: mdadm: array /dev/md0 started.
+    default:
+    default: Personalities : [linear] [multipath] [raid0] [raid1] [raid6] [raid5] [raid4] [raid10]
+    default: md0 : active raid6 sde[3] sdd[2] sdc[1] sdb[0]
+    default:       2093056 blocks super 1.2 level 6, 512k chunk, algorithm 2 [4/4] [UUUU]
+    default:       [>....................]  resync =  0.0% (1024/1046528) finish=16.7min speed=1024K/sec
+    default:
+    default: unused devices: <none>
+    default:
+    default: /dev/md0:
+    default:            Version : 1.2
+    default:      Creation Time : Sun Feb 23 15:10:27 2025
+    default:         Raid Level : raid6
+    default:         Array Size : 2093056 (2044.00 MiB 2143.29 MB)
+    default:      Used Dev Size : 1046528 (1022.00 MiB 1071.64 MB)
+    default:       Raid Devices : 4
+    default:      Total Devices : 4
+    default:        Persistence : Superblock is persistent
+    default:
+    default:        Update Time : Sun Feb 23 15:10:27 2025
+    default:              State : clean, resyncing
+    default:     Active Devices : 4
+    default:    Working Devices : 4
+    default:     Failed Devices : 0
+    default:      Spare Devices : 0
+    default:
+    default:             Layout : left-symmetric
+    default:         Chunk Size : 512K
+    default:
+    default: Consistency Policy : resync
+    default:
+    default:      Resync Status : 0% complete
+    default:
+    default:               Name : ubuntu2204.localdomain:0  (local to host ubuntu2204.localdomain)
+    default:               UUID : 7dc98783:547ffb34:cb2cabe6:53f2eee1
+    default:             Events : 0
+    default:
+    default:     Number   Major   Minor   RaidDevice State
+    default:        0       8       16        0      active sync   /dev/sdb
+    default:        1       8       32        1      active sync   /dev/sdc
+    default:        2       8       48        2      active sync   /dev/sdd
+    default:        3       8       64        3      active sync   /dev/sde
+    default:
+    default: Создаем конфигурационный файл mdadm.conf
+    default: ARRAY /dev/md0 level=raid6 num-devices=4 metadata=1.2 name=ubuntu2204.localdomain:0 UUID=7dc98783:547ffb34:cb2cabe6:53f2eee1
+    default:    devices=/dev/sdb,/dev/sdc,/dev/sdd,/dev/sde
+    default: mkdir: cannot create directory ‘/etc/mdadm’: File exists
+    default: ARRAY /dev/md0 level=raid6 num-devices=4 metadata=1.2 name=ubuntu2204.localdomain:0 UUID=7dc98783:547ffb34:cb2cabe6:53f2eee1
+    default:
+    default: Создаем GPT-раздел, пять партиций и монтируем их на диск
+    default: Information: You may need to update /etc/fstab.
+    default:
+    default: Information: You may need to update /etc/fstab.
+    default:
+    default: Information: You may need to update /etc/fstab.
+    default:
+    default: Information: You may need to update /etc/fstab.
+    default:
+    default: Information: You may need to update /etc/fstab.
+    default:
+    default: mke2fs 1.46.5 (30-Dec-2021)
+Creating filesystem with 104448 4k blocks and 104448 inodes
+    default: Filesystem UUID: 2ce46a21-49e4-451a-a8b0-b2256a2ac720
+    default: Superblock backups stored on blocks:
+    default:    32768, 98304
+    default:
+    default: Allocating group tables: done
+    default: Writing inode tables: done
+    default: Creating journal (4096 blocks): done
+    default: Writing superblocks and filesystem accounting information: done
+    default:
+    default: mke2fs 1.46.5 (30-Dec-2021)
+    default: Creating filesystem with 104704 4k blocks and 104704 inodes
+    default: Filesystem UUID: 9fc6ef83-6d75-49a4-b8e2-f546636218d4
+    default: Superblock backups stored on blocks:
+    default:    32768, 98304
+    default:
+    default: Allocating group tables: done
+    default: Writing inode tables: done
+    default: Creating journal (4096 blocks): done
+    default: Writing superblocks and filesystem accounting information: done
+    default:
+    default: mke2fs 1.46.5 (30-Dec-2021)
+    default: Creating filesystem with 104448 4k blocks and 104448 inodes
+    default: Filesystem UUID: 30db0a11-05d6-422e-92b8-19748c0578a2
+    default: Superblock backups stored on blocks:
+    default:    32768, 98304
+    default:
+    default: Allocating group tables: done
+    default: Writing inode tables: done
+    default: Creating journal (4096 blocks): done
+    default: Writing superblocks and filesystem accounting information: done
+    default:
+    default: mke2fs 1.46.5 (30-Dec-2021)
+    default: Creating filesystem with 104704 4k blocks and 104704 inodes
+    default: Filesystem UUID: 2e5adb88-6c11-4240-a176-c5f3c644265d
+    default: Superblock backups stored on blocks:
+    default:    32768, 98304
+    default:
+    default: Allocating group tables: done
+    default: Writing inode tables: done
+    default: Creating journal (4096 blocks): done
+    default: Writing superblocks and filesystem accounting information: done
+    default:
+    default: mke2fs 1.46.5 (30-Dec-2021)
+    default: Creating filesystem with 104448 4k blocks and 104448 inodes
+    default: Filesystem UUID: 349d8c72-4525-4e3e-8475-61f72b04316d
+    default: Superblock backups stored on blocks:
+    default:    32768, 98304
+    default:
+    default: Allocating group tables: done
+    default: Writing inode tables: done
+    default: Creating journal (4096 blocks): done
+    default: Writing superblocks and filesystem accounting information: done
+    default:
+    default: NAME                      MAJ:MIN RM   SIZE RO TYPE  MOUNTPOINTS
+    default: loop0                       7:0    0  63.4M  1 loop  /snap/core20/1974
+    default: loop1                       7:1    0  53.3M  1 loop  /snap/snapd/19457
+    default: loop2                       7:2    0 111.9M  1 loop  /snap/lxd/24322
+    default: loop3                       7:3    0  44.4M  1 loop  /snap/snapd/23545
+    default: loop4                       7:4    0  89.4M  1 loop  /snap/lxd/31333
+    default: sda                         8:0    0   128G  0 disk
+    default: ├─sda1                      8:1    0     1M  0 part
+    default: ├─sda2                      8:2    0     2G  0 part  /boot
+    default: └─sda3                      8:3    0   126G  0 part
+    default:   └─ubuntu--vg-ubuntu--lv 253:0    0    63G  0 lvm   /
+    default: sdb                         8:16   0     1G  0 disk
+    default: └─md0                       9:0    0     2G  0 raid6
+    default:   ├─md0p5                 259:0    0   408M  0 part  /raid/part5
+    default:   ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+    default:   ├─md0p2                 259:2    0   409M  0 part  /raid/part2
+    default:   ├─md0p3                 259:6    0   408M  0 part  /raid/part3
+    default:   └─md0p4                 259:7    0   409M  0 part  /raid/part4
+    default: sdc                         8:32   0     1G  0 disk
+    default: └─md0                       9:0    0     2G  0 raid6
+    default:   ├─md0p5                 259:0    0   408M  0 part  /raid/part5
+    default:   ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+    default:   ├─md0p2                 259:2    0   409M  0 part  /raid/part2
+    default:   ├─md0p3                 259:6    0   408M  0 part  /raid/part3
+    default:   └─md0p4                 259:7    0   409M  0 part  /raid/part4
+    default: sdd                         8:48   0     1G  0 disk
+    default: └─md0                       9:0    0     2G  0 raid6
+    default:   ├─md0p5                 259:0    0   408M  0 part  /raid/part5
+    default:   ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+    default:   ├─md0p2                 259:2    0   409M  0 part  /raid/part2
+    default:   ├─md0p3                 259:6    0   408M  0 part  /raid/part3
+    default:   └─md0p4                 259:7    0   409M  0 part  /raid/part4
+    default: sde                         8:64   0     1G  0 disk
+    default: └─md0                       9:0    0     2G  0 raid6
+    default:   ├─md0p5                 259:0    0   408M  0 part  /raid/part5
+    default:   ├─md0p1                 259:1    0   408M  0 part  /raid/part1
+    default:   ├─md0p2                 259:2    0   409M  0 part  /raid/part2
+    default:   ├─md0p3                 259:6    0   408M  0 part  /raid/part3
+    default:   └─md0p4                 259:7    0   409M  0 part  /raid/part4
+    default: sdf                         8:80   0     1G  0 disk
+    default: sdg                         8:96   0     1G  0 disk
