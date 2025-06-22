@@ -1,0 +1,4 @@
+[d23-vpn]
+ovpn_server ansible_host=192.168.56.10 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ovpn-server/virtualbox/private_key
+ovpn_client ansible_host=192.168.56.20 ansible_user=vagrant ansible_ssh_private_key_file=.vagrant/machines/ovpn-client/virtualbox/private_key
+

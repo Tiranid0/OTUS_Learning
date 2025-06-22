@@ -1,0 +1,27 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+    # Используем бокс Ubuntu 22.04 из официального облака
+    config.vm.box = "generic/ubuntu2204"
+
+    # Настройка виртуальной машины
+    config.vm.provider "virtualbox" do |vb|
+      # ОЗУ
+      vb.memory = "1024"
+      # Ядра
+      vb.cpus = 2
+
+    end
+    
+    # Конфигурируем сеть для каждой ovpn-server и ovpn-client
+    config.vm.define "ovpn-server" do |ovpnserver|
+      ovpnserver.vm.network "private_network", ip: "192.168.56.10"
+      ovpnserver.vm.hostname = "ovpn-server"
+    end
+    
+     config.vm.define "ovpn-client" do |ovpnclient|
+      ovpnclient.vm.network "private_network", ip: "192.168.56.20"
+      ovpnclient.vm.hostname = "ovpn-client"
+    end
+  end

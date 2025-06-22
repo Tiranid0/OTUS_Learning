@@ -1,0 +1,302 @@
+# ==========TAP/TUN==========
+- name: tap/tun
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  hosts: all
+  become: true
+  remote_user: vagrant
+  tasks:
+
+    - name: install packages
+      apt:
+        name:
+          - openvpn
+          - iperf3
+          - selinux-utils
+        update_cache: yes
+        state: present
+    
+    - name: setenforce 0
+      command: 'setenforce 0'
+      ignore_errors: yes
+
+    - block:
+
+      - name: create a file-key
+        command: 'openvpn --genkey secret /etc/openvpn/static.key'
+
+      - name: save key in var
+        slurp: 
+          src: '/etc/openvpn/static.key'
+        register: key
+      
+      - name: var to client
+        set_fact:
+          serv_key: "{{ key.content | b64decode }}"
+
+      - name: create server.conf for server
+        copy: 
+          dest: /etc/openvpn/server.conf
+          content: |
+            dev tap 
+            ifconfig 10.10.10.1 255.255.255.0 
+            topology subnet 
+            secret /etc/openvpn/static.key 
+            comp-lzo 
+            status /var/log/openvpn-status.log 
+            log /var/log/openvpn.log  
+            verb 3 
+      
+      - name: create openvpn service-unit for server
+        copy:
+          dest: /etc/systemd/system/openvpn@.service
+          content: |
+            [Unit] 
+            Description=OpenVPN Tunneling Application On %I 
+            After=network.target 
+            [Service] 
+            Type=notify 
+            PrivateTmp=true 
+            ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf 
+            [Install] 
+            WantedBy=multi-user.target
+
+      - name: start openvpn@server for server
+        service:
+          name: openvpn@server
+          enabled: yes
+          state: started
+      
+      when: inventory_hostname == "ovpn_server"
+  
+    - block:
+
+      - name: create server.conf for client
+        copy:
+          dest: /etc/openvpn/server.conf
+          content: |
+            dev tap 
+            remote 192.168.56.10 
+            ifconfig 10.10.10.2 255.255.255.0 
+            topology subnet 
+            route 192.168.56.0 255.255.255.0 
+            secret /etc/openvpn/static.key
+            comp-lzo
+            status /var/log/openvpn-status.log 
+            log /var/log/openvpn.log 
+            verb 3 
+
+      - name: copy key on client
+        copy:
+          dest: /etc/openvpn/static.key
+          content: "{{ hostvars['ovpn_server']['serv_key'] }}"
+
+      - name: create openvpn service-unit for client
+        copy:
+          dest: /etc/systemd/system/openvpn@.service
+          content: |
+            [Unit] 
+            Description=OpenVPN Tunneling Application On %I 
+            After=network.target 
+            [Service] 
+            Type=notify 
+            PrivateTmp=true 
+            ExecStart=/usr/sbin/openvpn --cd /etc/openvpn/ --config %i.conf 
+            [Install] 
+            WantedBy=multi-user.target
+
+      - name: start openvpn@server on client
+        service: 
+          name: openvpn@server
+          enabled: yes
+          state: started
+      
+      when: inventory_hostname == "ovpn_client"
+
+    - name: Wait for handle tap-test
+      ansible.builtin.pause:
+        prompt: "Press Enter to continue (if test is ready)"
+
+    - name: change mode to tun for server
+      lineinfile:
+        path: /etc/openvpn/server.conf
+        regexp: 'dev tap'
+        line: 'dev tun'
+        state: present
+      
+    - name: restart openvpn
+      service: 
+        name: openvpn@server
+        state: restarted
+        enabled: yes
+        
+    - name: Wait for handle tun-test
+      ansible.builtin.pause:
+        prompt: "Press Enter to continue (if test is ready)"
+
+
+#==========RAS==========
+- name: ras
+  hosts: ovpn_server
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  remote_user: vagrant
+  become: true
+  tasks:
+
+    - name: install easy-rsa
+      apt:
+        name: 
+        - easy-rsa
+        - iptables
+        - iptables-persistent
+        state: present
+    
+    - name: Enable IP forwarding
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: '1'
+        state: present
+        reload: yes
+
+    - name: Add NAT rule for VPN clients
+      iptables:
+        table: nat
+        chain: POSTROUTING
+        jump: MASQUERADE
+        source: 10.10.10.0/24
+        out_interface: eth0
+    - name: restart netfilter-persistent
+      service:
+        name: netfilter-persistent
+        state: restarted
+        enabled: true
+      when: inventory_hostname == "inetRouter"
+
+    - name: magic of keys and certs
+      shell: |
+        cd /etc/openvpn/
+        echo "yes" | /usr/share/easy-rsa/easyrsa init-pki
+        echo "rasvpn" | /usr/share/easy-rsa/easyrsa build-ca nopass
+        echo 'rasvpn' | /usr/share/easy-rsa/easyrsa gen-req server nopass
+        echo 'yes' | /usr/share/easy-rsa/easyrsa sign-req server server 
+        /usr/share/easy-rsa/easyrsa gen-dh
+        openvpn --genkey secret ta.key
+        echo 'client' | /usr/share/easy-rsa/easyrsa gen-req client nopass
+        echo 'yes' | /usr/share/easy-rsa/easyrsa sign-req client client
+
+    - name: create server.conf
+      copy:
+        dest: /etc/openvpn/server.conf
+        content: |
+          port 1207 
+          proto udp 
+          dev tun 
+          ca /etc/openvpn/pki/ca.crt 
+          cert /etc/openvpn/pki/issued/server.crt 
+          key /etc/openvpn/pki/private/server.key 
+          dh /etc/openvpn/pki/dh.pem 
+          server 10.10.10.0 255.255.255.0 
+          push "route 10.10.10.0 255.255.255.0"
+          tls-auth /etc/openvpn/ta.key 0
+          key-direction 0
+          ifconfig-pool-persist ipp.txt
+          topology subnet 
+          client-to-client 
+          client-config-dir /etc/openvpn/client 
+          keepalive 10 120 
+          comp-lzo 
+          persist-key 
+          persist-tun 
+          status /var/log/openvpn-status.log 
+          log /var/log/openvpn.log 
+          verb 3
+
+    - name: start openvpn
+      service: 
+        name: openvpn@server
+        state: restarted
+        enabled: yes
+
+    - name: ca.crt
+      slurp:
+        src: /etc/openvpn/pki/ca.crt
+      register: ca
+    - name: var to localhost
+      set_fact:
+        ca_cert: "{{ ca.content | b64decode }}"
+    
+    - name: client.crt
+      slurp:
+        src: /etc/openvpn/pki/issued/client.crt
+      register: clientcert
+    - name: var to localhost
+      set_fact:
+        client_cert: "{{ clientcert.content | b64decode }}"
+
+    - name: client.key
+      slurp:
+        src: /etc/openvpn/pki/private/client.key
+      register: clientkey
+    - name: var to localhost
+      set_fact:
+        client_key: "{{ clientkey.content | b64decode }}"
+
+    - name: ta.key
+      slurp:
+        src: /etc/openvpn/ta.key
+      register: takey
+    - name: var to localhost
+      set_fact:
+        ta_key: "{{ takey.content | b64decode }}"
+
+- name: ras_localhost
+  hosts: localhost
+  tasks:
+    - name: create conf dir
+      file:
+        path: host-ras
+        state: directory
+
+    - name: copy key on client
+      copy:
+        dest: host-ras/ca.crt
+        content: "{{ hostvars['ovpn_server']['ca_cert'] }}"
+    
+    - name: copy key on client
+      copy:
+        dest: host-ras/client.crt
+        content: "{{ hostvars['ovpn_server']['client_cert'] }}"
+
+    - name: copy key on client
+      copy:
+        dest: host-ras/client.key
+        content: "{{ hostvars['ovpn_server']['client_key'] }}"  
+
+    - name: copy ta.key on client
+      copy:
+        dest: host-ras/ta.key
+        content: "{{ hostvars['ovpn_server']['ta_key'] }}" 
+
+    - name: client.cong
+      copy:
+        dest: host-ras/client.conf
+        content: |
+          dev tun 
+          proto udp 
+          remote 192.168.56.10 1207 
+          route 10.10.10.0 255.255.255.0
+          client 
+          resolv-retry infinite 
+          remote-cert-tls server 
+          ca ./host-ras/ca.crt 
+          cert ./host-ras/client.crt 
+          key ./host-ras/client.key 
+          persist-key 
+          persist-tun 
+          comp-lzo 
+          verb 3 
+          tls-auth ./host-ras/ta.key 1
+          key-direction 1
+
+
