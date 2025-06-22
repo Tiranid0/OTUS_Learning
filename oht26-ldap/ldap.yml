@@ -1,0 +1,79 @@
+- name: all base config
+  hosts: all
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: install base soft
+    yum:
+      name:
+        - nano
+        - chrony
+      state: present
+      update_cache: yes
+
+  - name: set timezone
+    timezone:
+      name: Europe/Moscow
+
+  - name: start chrony
+    service:
+      name: chronyd
+      state: restarted
+      enabled: yes
+  
+  - name: add /etc/hosts
+    template:
+      src: hosts.j2
+      dest: /etc/hosts
+      owner: root
+      group: root
+      mode: 0644
+
+- name: server config
+  hosts: ipa.otus.lan
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+
+  - name: ipa-server install
+    yum:
+      name: ipa-server
+      state: present
+      update_cache: yes
+
+  - name: install server
+    command: >
+      ipa-server-install \
+        --no-host-dns \
+        --hostname=ipa.otus.lan \
+        --domain=otus.lan \
+        --realm=OTUS.LAN \
+        --ds-password=12345678 \
+        --admin-password=87654321 \
+        --unattended \
+        --no-ntp
+
+- name: client config
+  hosts: client1.otus.lan
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+
+ #Установка клиента Freeipa
+  - name: install module ipa-client
+    yum:
+      name:
+        - freeipa-client
+      state: present
+      update_cache: true
+  
+  #Запуск скрипта добавления хоста к серверу
+  - name: add host to ipa-server
+    shell: echo -e "yes\nyes" | ipa-client-install --mkhomedir --domain=OTUS.LAN --server=ipa.otus.lan --no-ntp -p admin -w 87654321
