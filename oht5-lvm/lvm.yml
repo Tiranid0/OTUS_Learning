@@ -1,0 +1,209 @@
+- name: LVM_Otus
+  hosts: all
+  vars:
+    ansible_ssh_common_args: '-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'
+  become: true
+  remote_user: vagrant
+  tasks:
+
+    - name: Show homework block name
+      debug:
+        msg: "__________==========Уменьшить том под / до 8G==========__________"
+
+    - name: tmp volume for /
+      shell: |
+        pvcreate /dev/sdb
+        vgcreate vg_root /dev/sdb
+        lvcreate -n lv_root -l +100%FREE /dev/vg_root
+      register: tmpvol_res
+    - name: show_tmpvol_res
+      debug:
+        msg: "{{ tmpvol_res.stdout_lines }}"
+      
+    - name: prepare fs and files
+      shell: |
+        mkfs.ext4 /dev/vg_root/lv_root
+        mount /dev/vg_root/lv_root /mnt
+      register: fs_res
+    - name: show_fs_res
+      debug: 
+        msg: "{{ fs_res.stdout_lines }}"
+    
+    - name: rsync 
+      shell: rsync -avxHAX --progress / /mnt/
+      
+    - name: configure grub
+      shell: |
+        for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
+        chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg && update-initramfs -u
+      register: confgrub_res
+    - name: show_confgrub_res
+      debug:
+        msg: "{{ confgrub_res.stdout_lines }}"
+    
+    - name: Reboot the system
+      reboot:
+        connect_timeout: 15  
+
+    - name: check by lsblk
+      shell: lsblk
+      register: lsblk_res
+    - name: show_lsblk_res
+      debug:
+        msg: "{{ lsblk_res.stdout_lines }}"
+
+    - name: delete old LV and create new 8G
+      shell: |
+        lvremove -y -ff /dev/ubuntu-vg/ubuntu-lv
+        lvcreate -y -n ubuntu-vg/ubuntu-lv -L 8G /dev/ubuntu-vg
+      register: oldnewlv_res
+    - name: show_oldnewlv_res
+      debug:
+        msg: "{{ oldnewlv_res.stdout_lines }}"
+
+    - name: prepare fs and files2
+      shell: |
+        mkfs.ext4 /dev/ubuntu-vg/ubuntu-lv
+        mount /dev/ubuntu-vg/ubuntu-lv /mnt
+      register: fs_res
+    - name: show_fs_res
+      debug: 
+        msg: "{{ fs_res.stdout_lines }}"
+    
+    - name: rsync2
+      shell: rsync -avxHAX --progress / /mnt/
+      
+    - name: configure grub2
+      shell: |
+        for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
+        chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg && update-initramfs -u
+      register: confgrub_res
+    - name: show_confgrub_res
+      debug:
+        msg: "{{ confgrub_res.stdout_lines }}"
+      
+    - name: show 1st stage
+      shell: |
+        lsblk
+        vgs
+        lvs
+      register: st_res
+    - name: show_st_res
+      debug:
+        msg: "{{ st_res.stdout_lines }}"
+
+    - name: Show homework block name
+      debug:
+        msg: "__________==========Выделить том под /var - сделать в mirror==========__________"
+
+    - name: Chroot into /mnt
+      shell: |
+        chroot /mnt bash -c '
+        pvcreate -ff -y /dev/sdc /dev/sdd &&
+        vgcreate vg_var /dev/sdc /dev/sdd &&
+        lvcreate -L 950M -m1 -n lv_var vg_var &&
+        mkfs.ext4 /dev/vg_var/lv_var &&
+        mount /dev/vg_var/lv_var /mnt &&
+        cp -aR /var/* /mnt/ &&
+        mkdir /tmp/oldvar &&
+        mv /var/* /tmp/oldvar &&
+        umount /mnt &&
+        mount /dev/vg_var/lv_var /var &&
+        echo "`blkid | grep var: | awk '"'"'{print $2}'"'"'` /var ext4 defaults 0 0" >> /etc/fstab'  
+      register: grub_res
+    - name: show grub_res
+      debug:
+        msg: "{{ grub_res.stdout_lines }}"
+
+    - name: Reboot the system
+      reboot:
+        connect_timeout: 15
+
+    - name: delete tmp VG
+      shell: |
+        lvremove -y /dev/vg_root/lv_root
+        vgremove /dev/vg_root
+        pvremove /dev/sdb
+        lsblk
+        vgs
+        lvs
+      register: deltmpvg_res
+    - name: show_deltmpvg_res
+      debug:
+        msg: "{{ deltmpvg_res.stdout_lines }}"
+    
+    - name: Show homework block name
+      debug:
+        msg: "__________==========Выделить том под /home.==========__________"
+
+    - name: prepare /home volume
+      shell: |
+        lvcreate -n LogVol_Home -L 2G /dev/ubuntu-vg
+        mkfs.ext4 /dev/ubuntu-vg/LogVol_Home
+        mount /dev/ubuntu-vg/LogVol_Home /mnt/
+        cp -aR /home/* /mnt/
+        rm -rf /home/*
+        umount /mnt
+        mount /dev/ubuntu-vg/LogVol_Home /home/
+        echo "`blkid | grep Home | awk '{print $2}'` /home ext4 defaults 0 0" >> /etc/fstab
+        lsblk
+        vgs
+        lvs
+      register: prep_res
+    - name: show_prep_res
+      debug:
+        msg: "{{ prep_res.stdout_lines }}"
+
+    - name: Show homework block name
+      debug:
+        msg: "__________==========Работа со снапшотами==========__________"
+
+    - name: generate vg-lv and files
+      shell: |
+        bash -c 'touch /home/file{1..20}'
+        ls /home
+      register: gen_res
+    - name: show_gen_res
+      debug:
+        msg: "{{ gen_res.stdout_lines }}"
+
+    - name: make snap
+      shell: |
+        lvcreate -L 100MB -s -n home_snap /dev/ubuntu-vg/LogVol_Home
+        lsblk
+      register: snap_res
+    - name: show_snap_res
+      debug:
+        msg: "{{ snap_res.stdout_lines }}"
+
+    - name: delete some  files
+      shell: |
+        bash -c 'rm -f /home/file{11..20}'
+        ls /home
+      register: del_res
+    - name: show_del_res
+      debug:
+        msg: "{{ del_res.stdout_lines }}"
+    
+    - name: launch restore by lvconvert command
+      shell: |
+        lvconvert --merge /dev/ubuntu-vg/home_snap
+      register: lvconv_res
+    - name: show_lbconv_res
+      debug:
+        msg: "{{ lvconv_res.stdout_lines }}"
+
+    - name: Reboot the system
+      reboot:
+        connect_timeout: 25
+
+    - name: check restore
+      shell: |
+        ls -al /home
+        lsblk
+        vgs
+        lvs
+      register: restore_res
+    - name: show_restore_res
+      debug:
+        msg: "{{ restore_res.stdout_lines }}"

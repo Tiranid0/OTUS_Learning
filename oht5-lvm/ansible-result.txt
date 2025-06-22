@@ -1,0 +1,452 @@
+$ ansible-playbook -i hosts l5.yml 
+[WARNING]: Invalid characters were found in group names but not replaced, use
+-vvvv to see details
+
+PLAY [LVM_Otus] ****************************************************************
+
+TASK [Gathering Facts] *********************************************************
+ok: [lvm]
+
+TASK [Show homework block name] ************************************************
+ok: [lvm] => {
+    "msg": "__________==========Уменьшить том под / до 8G==========__________"
+}
+
+TASK [tmp volume for /] ********************************************************
+changed: [lvm]
+
+TASK [show_tmpvol_res] *********************************************************
+ok: [lvm] => {
+    "msg": [
+        "  Physical volume \"/dev/sdb\" successfully created.",
+        "  Volume group \"vg_root\" successfully created",
+        "  Logical volume \"lv_root\" created."
+    ]
+}
+
+TASK [prepare fs and files] ****************************************************
+changed: [lvm]
+
+TASK [show_fs_res] *************************************************************
+ok: [lvm] => {
+    "msg": [
+        "Creating filesystem with 2620416 4k blocks and 655360 inodes",
+        "Filesystem UUID: ba8e7a65-8eb5-4223-9329-c5cd9613a599",
+        "Superblock backups stored on blocks: ",
+        "\t32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632",
+        "",
+        "Allocating group tables:  0/80\b\b\b\b\b     \b\b\b\b\bdone                            ",
+        "Writing inode tables:  0/80\b\b\b\b\b     \b\b\b\b\bdone                            ",
+        "Creating journal (16384 blocks): done",
+        "Writing superblocks and filesystem accounting information:  0/80\b\b\b\b\b     \b\b\b\b\bdone"
+    ]
+}
+
+TASK [rsync] *******************************************************************
+changed: [lvm]
+
+TASK [configure grub] **********************************************************
+changed: [lvm]
+
+TASK [show_confgrub_res] *******************************************************
+ok: [lvm] => {
+    "msg": [
+        "update-initramfs: Generating /boot/initrd.img-5.15.0-91-generic"
+    ]
+}
+
+TASK [Reboot the system] *******************************************************
+changed: [lvm]
+
+TASK [check by lsblk] **********************************************************
+changed: [lvm]
+
+TASK [show_lsblk_res] **********************************************************
+ok: [lvm] => {
+    "msg": [
+        "NAME                      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS",
+        "loop0                       7:0    0  53.3M  1 loop /snap/snapd/19457",
+        "loop1                       7:1    0  63.4M  1 loop /snap/core20/1974",
+        "loop2                       7:2    0 111.9M  1 loop /snap/lxd/24322",
+        "sda                         8:0    0   128G  0 disk ",
+        "├─sda1                      8:1    0     1M  0 part ",
+        "├─sda2                      8:2    0     2G  0 part /boot",
+        "└─sda3                      8:3    0   126G  0 part ",
+        "  └─ubuntu--vg-ubuntu--lv 253:1    0    63G  0 lvm  ",
+        "sdb                         8:16   0    10G  0 disk ",
+        "└─vg_root-lv_root         253:0    0    10G  0 lvm  /",
+        "sdc                         8:32   0    10G  0 disk ",
+        "sdd                         8:48   0    10G  0 disk ",
+        "sde                         8:64   0    10G  0 disk "
+    ]
+}
+
+TASK [delete old LV and create new 8G] *****************************************
+changed: [lvm]
+
+TASK [show_oldnewlv_res] *******************************************************
+ok: [lvm] => {
+    "msg": [
+        "  Logical volume \"ubuntu-lv\" successfully removed",
+        "  Wiping ext4 signature on /dev/ubuntu-vg/ubuntu-lv.",
+        "  Logical volume \"ubuntu-lv\" created."
+    ]
+}
+
+TASK [prepare fs and files2] ***************************************************
+changed: [lvm]
+
+TASK [show_fs_res] *************************************************************
+ok: [lvm] => {
+    "msg": [
+        "Creating filesystem with 2097152 4k blocks and 524288 inodes",
+        "Filesystem UUID: eb2d2dfe-b3c3-4b7c-8843-530c8ba0433f",
+        "Superblock backups stored on blocks: ",
+        "\t32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632",
+        "",
+        "Allocating group tables:  0/64\b\b\b\b\b     \b\b\b\b\bdone                            ",
+        "Writing inode tables:  0/64\b\b\b\b\b     \b\b\b\b\bdone                            ",
+        "Creating journal (16384 blocks): done",
+        "Writing superblocks and filesystem accounting information:  0/64\b\b\b\b\b     \b\b\b\b\bdone"
+    ]
+}
+
+TASK [rsync2] ******************************************************************
+changed: [lvm]
+
+TASK [configure grub2] *********************************************************
+changed: [lvm]
+
+TASK [show_confgrub_res] *******************************************************
+ok: [lvm] => {
+    "msg": [
+        "update-initramfs: Generating /boot/initrd.img-5.15.0-91-generic"
+    ]
+}
+
+TASK [show 1st stage] **********************************************************
+changed: [lvm]
+
+TASK [show_st_res] *************************************************************
+ok: [lvm] => {
+    "msg": [
+        "NAME                      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS",
+        "loop0                       7:0    0  53.3M  1 loop /snap/snapd/19457",
+        "loop1                       7:1    0  63.4M  1 loop /snap/core20/1974",
+        "loop2                       7:2    0 111.9M  1 loop /snap/lxd/24322",
+        "sda                         8:0    0   128G  0 disk ",
+        "├─sda1                      8:1    0     1M  0 part ",
+        "├─sda2                      8:2    0     2G  0 part /mnt/boot",
+        "│                                                   /boot",
+        "└─sda3                      8:3    0   126G  0 part ",
+        "  └─ubuntu--vg-ubuntu--lv 253:1    0     8G  0 lvm  /mnt",
+        "sdb                         8:16   0    10G  0 disk ",
+        "└─vg_root-lv_root         253:0    0    10G  0 lvm  /",
+        "sdc                         8:32   0    10G  0 disk ",
+        "sdd                         8:48   0    10G  0 disk ",
+        "sde                         8:64   0    10G  0 disk ",
+        "  VG        #PV #LV #SN Attr   VSize    VFree   ",
+        "  ubuntu-vg   1   1   0 wz--n- <126.00g <118.00g",
+        "  vg_root     1   1   0 wz--n-  <10.00g       0 ",
+        "  LV        VG        Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert",
+        "  ubuntu-lv ubuntu-vg -wi-ao----   8.00g                                                    ",
+        "  lv_root   vg_root   -wi-ao---- <10.00g                                                    "
+    ]
+}
+
+TASK [Show homework block name] ************************************************
+ok: [lvm] => {
+    "msg": "__________==========Выделить том под /var - сделать в mirror==========__________"
+}
+
+TASK [Chroot into /mnt] ********************************************************
+changed: [lvm]
+
+TASK [show grub_res] ***********************************************************
+ok: [lvm] => {
+    "msg": [
+        "  Physical volume \"/dev/sdc\" successfully created.",
+        "  Physical volume \"/dev/sdd\" successfully created.",
+        "  Volume group \"vg_var\" successfully created",
+        "  Rounding up size to full physical extent 952.00 MiB",
+        "  Logical volume \"lv_var\" created.",
+        "Creating filesystem with 243712 4k blocks and 60928 inodes",
+        "Filesystem UUID: 83986da6-7775-47c6-8391-330feef58c01",
+        "Superblock backups stored on blocks: ",
+        "\t32768, 98304, 163840, 229376",
+        "",
+        "Allocating group tables: 0/8\b\b\b   \b\b\bdone                            ",
+        "Writing inode tables: 0/8\b\b\b   \b\b\bdone                            ",
+        "Creating journal (4096 blocks): done",
+        "Writing superblocks and filesystem accounting information: 0/8\b\b\b   \b\b\bdone"
+    ]
+}
+
+TASK [Reboot the system] *******************************************************
+changed: [lvm]
+
+TASK [delete tmp VG] ***********************************************************
+changed: [lvm]
+
+TASK [show_deltmpvg_res] *******************************************************
+ok: [lvm] => {
+    "msg": [
+        "  Logical volume \"lv_root\" successfully removed",
+        "  Volume group \"vg_root\" successfully removed",
+        "  Labels on physical volume \"/dev/sdb\" successfully wiped.",
+        "NAME                      MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS",
+        "loop0                       7:0    0  63.4M  1 loop /snap/core20/1974",
+        "loop1                       7:1    0 111.9M  1 loop /snap/lxd/24322",
+        "loop2                       7:2    0  53.3M  1 loop /snap/snapd/19457",
+        "sda                         8:0    0   128G  0 disk ",
+        "├─sda1                      8:1    0     1M  0 part ",
+        "├─sda2                      8:2    0     2G  0 part /boot",
+        "└─sda3                      8:3    0   126G  0 part ",
+        "  └─ubuntu--vg-ubuntu--lv 253:1    0     8G  0 lvm  /",
+        "sdb                         8:16   0    10G  0 disk ",
+        "sdc                         8:32   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_0   253:2    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var         253:6    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_0  253:3    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var         253:6    0   952M  0 lvm  /var",
+        "sdd                         8:48   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_1   253:4    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var         253:6    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_1  253:5    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var         253:6    0   952M  0 lvm  /var",
+        "sde                         8:64   0    10G  0 disk ",
+        "  VG        #PV #LV #SN Attr   VSize    VFree   ",
+        "  ubuntu-vg   1   1   0 wz--n- <126.00g <118.00g",
+        "  vg_var      2   1   0 wz--n-   19.99g   18.12g",
+        "  LV        VG        Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert",
+        "  ubuntu-lv ubuntu-vg -wi-ao----   8.00g                                                    ",
+        "  lv_var    vg_var    rwi-aor--- 952.00m                                    100.00          "
+    ]
+}
+
+TASK [Show homework block name] ************************************************
+ok: [lvm] => {
+    "msg": "__________==========Выделить том под /home.==========__________"
+}
+
+TASK [prepare /home volume] ****************************************************
+changed: [lvm]
+
+TASK [show_prep_res] ***********************************************************
+ok: [lvm] => {
+    "msg": [
+        "  Logical volume \"LogVol_Home\" created.",
+        "Creating filesystem with 524288 4k blocks and 131072 inodes",
+        "Filesystem UUID: 1c268ee8-5aff-4233-bbbe-3f2699bf5761",
+        "Superblock backups stored on blocks: ",
+        "\t32768, 98304, 163840, 229376, 294912",
+        "",
+        "Allocating group tables:  0/16\b\b\b\b\b     \b\b\b\b\bdone                            ",
+        "Writing inode tables:  0/16\b\b\b\b\b     \b\b\b\b\bdone                            ",
+        "Creating journal (16384 blocks): done",
+        "Writing superblocks and filesystem accounting information:  0/16\b\b\b\b\b     \b\b\b\b\bdone",
+        "",
+        "NAME                       MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS",
+        "loop0                        7:0    0  63.4M  1 loop /snap/core20/1974",
+        "loop1                        7:1    0 111.9M  1 loop /snap/lxd/24322",
+        "loop2                        7:2    0  53.3M  1 loop /snap/snapd/19457",
+        "sda                          8:0    0   128G  0 disk ",
+        "├─sda1                       8:1    0     1M  0 part ",
+        "├─sda2                       8:2    0     2G  0 part /boot",
+        "└─sda3                       8:3    0   126G  0 part ",
+        "  ├─ubuntu--vg-LogVol_Home 253:0    0     2G  0 lvm  /home",
+        "  └─ubuntu--vg-ubuntu--lv  253:1    0     8G  0 lvm  /",
+        "sdb                          8:16   0    10G  0 disk ",
+        "sdc                          8:32   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_0    253:2    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var          253:6    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_0   253:3    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var          253:6    0   952M  0 lvm  /var",
+        "sdd                          8:48   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_1    253:4    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var          253:6    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_1   253:5    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var          253:6    0   952M  0 lvm  /var",
+        "sde                          8:64   0    10G  0 disk ",
+        "  VG        #PV #LV #SN Attr   VSize    VFree   ",
+        "  ubuntu-vg   1   2   0 wz--n- <126.00g <116.00g",
+        "  vg_var      2   1   0 wz--n-   19.99g   18.12g",
+        "  LV          VG        Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert",
+        "  LogVol_Home ubuntu-vg -wi-ao----   2.00g                                                    ",
+        "  ubuntu-lv   ubuntu-vg -wi-ao----   8.00g                                                    ",
+        "  lv_var      vg_var    rwi-aor--- 952.00m                                    100.00          "
+    ]
+}
+
+TASK [Show homework block name] ************************************************
+ok: [lvm] => {
+    "msg": "__________==========Работа со снапшотами==========__________"
+}
+
+TASK [generate vg-lv and files] ************************************************
+changed: [lvm]
+
+TASK [show_gen_res] ************************************************************
+ok: [lvm] => {
+    "msg": [
+        "file1",
+        "file10",
+        "file11",
+        "file12",
+        "file13",
+        "file14",
+        "file15",
+        "file16",
+        "file17",
+        "file18",
+        "file19",
+        "file2",
+        "file20",
+        "file3",
+        "file4",
+        "file5",
+        "file6",
+        "file7",
+        "file8",
+        "file9",
+        "lost+found",
+        "vagrant"
+    ]
+}
+
+TASK [make snap] ***************************************************************
+changed: [lvm]
+
+TASK [show_snap_res] ***********************************************************
+ok: [lvm] => {
+    "msg": [
+        "  Logical volume \"home_snap\" created.",
+        "NAME                            MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS",
+        "loop0                             7:0    0  63.4M  1 loop /snap/core20/1974",
+        "loop1                             7:1    0 111.9M  1 loop /snap/lxd/24322",
+        "loop2                             7:2    0  53.3M  1 loop /snap/snapd/19457",
+        "sda                               8:0    0   128G  0 disk ",
+        "├─sda1                            8:1    0     1M  0 part ",
+        "├─sda2                            8:2    0     2G  0 part /boot",
+        "└─sda3                            8:3    0   126G  0 part ",
+        "  ├─ubuntu--vg-ubuntu--lv       253:1    0     8G  0 lvm  /",
+        "  ├─ubuntu--vg-LogVol_Home-real 253:7    0     2G  0 lvm  ",
+        "  │ ├─ubuntu--vg-LogVol_Home    253:0    0     2G  0 lvm  /home",
+        "  │ └─ubuntu--vg-home_snap      253:9    0     2G  0 lvm  ",
+        "  └─ubuntu--vg-home_snap-cow    253:8    0   100M  0 lvm  ",
+        "    └─ubuntu--vg-home_snap      253:9    0     2G  0 lvm  ",
+        "sdb                               8:16   0    10G  0 disk ",
+        "sdc                               8:32   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_0         253:2    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var               253:6    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_0        253:3    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var               253:6    0   952M  0 lvm  /var",
+        "sdd                               8:48   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_1         253:4    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var               253:6    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_1        253:5    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var               253:6    0   952M  0 lvm  /var",
+        "sde                               8:64   0    10G  0 disk "
+    ]
+}
+
+TASK [delete some  files] ******************************************************
+changed: [lvm]
+
+TASK [show_del_res] ************************************************************
+ok: [lvm] => {
+    "msg": [
+        "file1",
+        "file10",
+        "file2",
+        "file3",
+        "file4",
+        "file5",
+        "file6",
+        "file7",
+        "file8",
+        "file9",
+        "lost+found",
+        "vagrant"
+    ]
+}
+
+TASK [launch restore by lvconvert command] *************************************
+changed: [lvm]
+
+TASK [show_lbconv_res] *********************************************************
+ok: [lvm] => {
+    "msg": [
+        "  Delaying merge since origin is open.",
+        "  Merging of snapshot ubuntu-vg/home_snap will occur on next activation of ubuntu-vg/LogVol_Home."
+    ]
+}
+
+TASK [Reboot the system] *******************************************************
+changed: [lvm]
+
+TASK [check restore] ***********************************************************
+changed: [lvm]
+
+TASK [show_restore_res] ********************************************************
+ok: [lvm] => {
+    "msg": [
+        "total 28",
+        "drwxr-xr-x  4 root    root     4096 Apr 20 18:40 .",
+        "drwxr-xr-x 19 root    root     4096 Jan 11  2024 ..",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file1",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file10",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file11",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file12",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file13",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file14",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file15",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file16",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file17",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file18",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file19",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file2",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file20",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file3",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file4",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file5",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file6",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file7",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file8",
+        "-rw-r--r--  1 root    root        0 Apr 20 18:40 file9",
+        "drwx------  2 root    root    16384 Apr 20 18:40 lost+found",
+        "drwxr-x---  4 vagrant vagrant  4096 Jan 11  2024 vagrant",
+        "NAME                       MAJ:MIN RM   SIZE RO TYPE MOUNTPOINTS",
+        "loop0                        7:0    0 111.9M  1 loop /snap/lxd/24322",
+        "loop1                        7:1    0  53.3M  1 loop /snap/snapd/19457",
+        "loop2                        7:2    0  63.4M  1 loop /snap/core20/1974",
+        "sda                          8:0    0   128G  0 disk ",
+        "├─sda1                       8:1    0     1M  0 part ",
+        "├─sda2                       8:2    0     2G  0 part /boot",
+        "└─sda3                       8:3    0   126G  0 part ",
+        "  ├─ubuntu--vg-ubuntu--lv  253:0    0     8G  0 lvm  /",
+        "  └─ubuntu--vg-LogVol_Home 253:3    0     2G  0 lvm  /home",
+        "sdb                          8:16   0    10G  0 disk ",
+        "sdc                          8:32   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_0    253:5    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var          253:9    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_0   253:6    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var          253:9    0   952M  0 lvm  /var",
+        "sdd                          8:48   0    10G  0 disk ",
+        "├─vg_var-lv_var_rmeta_1    253:7    0     4M  0 lvm  ",
+        "│ └─vg_var-lv_var          253:9    0   952M  0 lvm  /var",
+        "└─vg_var-lv_var_rimage_1   253:8    0   952M  0 lvm  ",
+        "  └─vg_var-lv_var          253:9    0   952M  0 lvm  /var",
+        "sde                          8:64   0    10G  0 disk ",
+        "  VG        #PV #LV #SN Attr   VSize    VFree   ",
+        "  ubuntu-vg   1   2   0 wz--n- <126.00g <116.00g",
+        "  vg_var      2   1   0 wz--n-   19.99g   18.12g",
+        "  LV          VG        Attr       LSize   Pool Origin Data%  Meta%  Move Log Cpy%Sync Convert",
+        "  LogVol_Home ubuntu-vg -wi-ao----   2.00g                                                    ",
+        "  ubuntu-lv   ubuntu-vg -wi-ao----   8.00g                                                    ",
+        "  lv_var      vg_var    rwi-aor--- 952.00m                                    100.00          "
+    ]
+}
+
+PLAY RECAP *********************************************************************
+lvm                        : ok=42   changed=21   unreachable=0    failed=0    skipped=0    rescued=0    ignored=0  
